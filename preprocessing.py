@@ -22,14 +22,14 @@ def get_token_positions(context_ids, offset_mapping, answer_text, answer_start):
     answer_end = answer_start + len(answer_text)
     for i in range(len(context_ids)):
         token_start, token_end = offset_mapping[i]
-        if answer_start >= token_start:
-            if answer_start > token_start:
+        if token_start >= answer_start:
+            if token_start > answer_start:
                 i -= 1
             start_position = i
             break
     for j in range(start_position, len(context_ids)):
         token_start, token_end = offset_mapping[j]
-        if answer_end >= token_end:
+        if token_end >= answer_end:
             end_position = j
             break
     return start_position, end_position
@@ -85,27 +85,28 @@ def preprocess_all(topics, tokenizer):
     return batches
 
 tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
-configuration = transformers.DistilBertConfig()
+configuration = transformers.DistilBertConfig(max_position_embeddings = 1024)
 learning_rate = 0.0001
 
 batches = preprocess_all(topics, tokenizer)
-model = transformers.DistilBertForQuestionAnswering(configuration)
+model = transformers.DistilBertForQuestionAnswering(configuration).cuda()
 optimizer = torch.optim.SGD(model.parameters(), learning_rate)
 
 model.train()
 max_batch_size = 1
 for i, batch in enumerate(batches):
-    input_ids = batch.input_ids[:max_batch_size, :]
-    attention_mask = batch.attention_mask[:max_batch_size, :]
-    start_positions = batch.start_positions[:max_batch_size]
-    end_positions = batch.end_positions[:max_batch_size]
+    input_ids = batch.input_ids[:max_batch_size, :].cuda()
+    attention_mask = batch.attention_mask[:max_batch_size, :].cuda()
+    start_positions = batch.start_positions[:max_batch_size].cuda()
+    end_positions = batch.end_positions[:max_batch_size].cuda()
     
-    optimizer.zero_grad()
     model_output = model(input_ids, attention_mask, start_positions = start_positions,
                          end_positions = end_positions)
     loss = model_output.loss
     
+    optimizer.zero_grad()
     loss.backward()
     optimizer.step()
     
     print("Batch", i, "loss is", loss.item())
+    torch.cuda.empty_cache()
