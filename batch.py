@@ -29,14 +29,14 @@ class BatchIterator:
                 i -= 1
             i += 1
             
-        #make sure the [SEP] token is at the end    
-        reformed_ids = torch.cat(split_input_ids)[:, :self._max_length - 1]
-        reformed_mask = torch.cat(split_attention_mask)[:, :self._max_length - 1]
-        sep_list = [self._sep_id for _ in range(reformed_ids.size(0))]
-        sep_token = torch.LongTensor(sep_list).unsqueeze(1)
+        #make sure the [SEP] token is at the end if truncated
+        self.input_ids = torch.cat(split_input_ids)[:, :self._max_length]
+        end = self._max_length - 1
+        for i in range(self.input_ids.size(0)):
+            if self.input_ids[i, end] != 0:
+                self.input_ids[i, end] = self._sep_id
         
-        self.input_ids = torch.cat([reformed_ids, sep_token], 1)
-        self.attention_mask = torch.cat([reformed_mask, sep_token], 1)
+        self.attention_mask = torch.cat(split_attention_mask)[:, :self._max_length]
         self.start_positions = torch.cat(split_start_positions)
         self.end_positions = torch.cat(split_end_positions)
         

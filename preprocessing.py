@@ -66,6 +66,7 @@ def get_token_positions(token_ids, offset_mapping, answer_text, answer_start):
 
 def preprocess(json_file, tokenizerm, max_examples):
     df = create_df(json_file)
+    #this is a quick fix because the entire df is too big
     output = tokenize_contexts(df.iloc[:max_examples], tokenizer)
     input_ids = output["input_ids"]
     batch_iterator = BatchIterator(input_ids, output["attention_mask"])
@@ -88,7 +89,7 @@ configuration = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
                                               dim = 384, hidden_dim = 1536)
 
 learning_rate = 0.0001
-batch_size = 8
+batch_size = 16
 max_examples = 40000
 
 batch_iterator = preprocess(train_json, tokenizer, max_examples)
@@ -111,4 +112,3 @@ for i, batch in enumerate(batch_iterator.get_batches(batch_size)):
     optimizer.step()
     
     print("Batch", i, "loss is", loss.item())
-    torch.cuda.empty_cache()
