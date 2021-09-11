@@ -1,11 +1,5 @@
-import json
 import pandas as pd
-import torch
-import transformers
 from batch import BatchIterator
-
-with open("data/train-v2.0.json") as file:
-    train_json = json.load(file)
     
 def create_df(json_file):
     contexts = []
@@ -19,7 +13,7 @@ def create_df(json_file):
             qas = paragraph["qas"]
             for i in range(len(qas)):
                 answers = qas[i]["answers"]
-                if len(answers) == 1:
+                if len(answers) >= 1:
                     contexts.append(paragraph["context"])
                     questions.append(qas[i]["question"])
                     answer_texts.append(answers[0]["text"])
@@ -62,14 +56,15 @@ def get_token_positions(token_ids, offset_mapping, answer_text, answer_start):
             end_position = k
             break
         
-    return start_position, end_position
+    return context_start, start_position, end_position
 
-def preprocess(json_file, tokenizerm, max_examples):
+def preprocess(json_file, tokenizer, max_examples = 10000):
     df = create_df(json_file)
     #this is a quick fix because the entire df is too big
     output = tokenize_contexts(df.iloc[:max_examples], tokenizer)
     input_ids = output["input_ids"]
     batch_iterator = BatchIterator(input_ids, output["attention_mask"])
+    context_starts = []
     start_positions = []
     end_positions = []
     for i in range(input_ids.size(0)):
@@ -77,38 +72,10 @@ def preprocess(json_file, tokenizerm, max_examples):
         offset_mappings = output["offset_mapping"][i]
         answer_text = df.at[i, "answer_texts"]
         answer_start = df.at[i, "answer_starts"]
-        start_position, end_position = get_token_positions(token_ids, offset_mappings,
-                                                           answer_text, answer_start)
-        start_positions.append(start_position)
-        end_positions.append(end_position)
-    batch_iterator.add_positions(start_positions, end_positions)
+        token_positions = get_token_positions(token_ids, offset_mappings,
+                                              answer_text, answer_start)
+        context_starts.append(token_positions[0])
+        start_positions.append(token_positions[1])
+        end_positions.append(token_positions[2])
+    batch_iterator.add_positions(context_starts, start_positions, end_positions)
     return batch_iterator
-
-tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
-configuration = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
-                                              dim = 384, hidden_dim = 1536)
-
-learning_rate = 0.0001
-batch_size = 16
-max_examples = 40000
-
-batch_iterator = preprocess(train_json, tokenizer, max_examples)
-model = transformers.DistilBertForQuestionAnswering(configuration).cuda()
-optimizer = torch.optim.SGD(model.parameters(), learning_rate)
-
-model.train()
-for i, batch in enumerate(batch_iterator.get_batches(batch_size)):
-    input_ids = batch[0].cuda()
-    attention_mask = batch[1].cuda()
-    start_positions = batch[2].cuda()
-    end_positions = batch[3].cuda()
-    
-    model_output = model(input_ids, attention_mask, start_positions = start_positions,
-                         end_positions = end_positions)
-    loss = model_output.loss
-    
-    optimizer.zero_grad()
-    loss.backward()
-    optimizer.step()
-    
-    print("Batch", i, "loss is", loss.item())
