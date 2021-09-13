@@ -60,22 +60,31 @@ def get_token_positions(token_ids, offset_mapping, answer_text, answer_start):
 
 def preprocess(json_file, tokenizer, max_examples = 10000):
     df = create_df(json_file)
-    #this is a quick fix because the entire df is too big
-    output = tokenize_contexts(df.iloc[:max_examples], tokenizer)
-    input_ids = output["input_ids"]
-    batch_iterator = BatchIterator(input_ids, output["attention_mask"])
-    context_starts = []
-    start_positions = []
-    end_positions = []
-    for i in range(input_ids.size(0)):
-        token_ids = input_ids[i]
-        offset_mappings = output["offset_mapping"][i]
-        answer_text = df.at[i, "answer_texts"]
-        answer_start = df.at[i, "answer_starts"]
-        token_positions = get_token_positions(token_ids, offset_mappings,
-                                              answer_text, answer_start)
-        context_starts.append(token_positions[0])
-        start_positions.append(token_positions[1])
-        end_positions.append(token_positions[2])
-    batch_iterator.add_positions(context_starts, start_positions, end_positions)
+    example_start = 0
+    batch_iterator = BatchIterator()
+    while example_start < df.shape[0]:
+        
+        example_end = example_start + max_examples
+        print("Processing through example", example_end)
+        
+        output = tokenize_contexts(df.iloc[example_start:example_end], tokenizer)
+        input_ids = output["input_ids"]
+        context_starts = []
+        start_positions = []
+        end_positions = []
+        
+        for i in range(input_ids.size(0)):
+            token_ids = input_ids[i]
+            offset_mappings = output["offset_mapping"][i]
+            answer_text = df.at[example_start + i, "answer_texts"]
+            answer_start = df.at[example_start + i, "answer_starts"]
+            token_positions = get_token_positions(token_ids, offset_mappings,
+                                                  answer_text, answer_start)
+            context_starts.append(token_positions[0])
+            start_positions.append(token_positions[1])
+            end_positions.append(token_positions[2])
+            
+        batch_iterator.add_examples(input_ids, output["attention_mask"],
+                                     context_starts, start_positions, end_positions)
+        example_start = example_end
     return batch_iterator

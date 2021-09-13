@@ -12,10 +12,9 @@ configuration = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
 
 learning_rate = 0.0001
 batch_size = 16
-max_examples = 10000
-epochs = 2
+epochs = 1
 
-batch_iterator = preprocessing.preprocess(train_json, tokenizer, max_examples)
+batch_iterator = preprocessing.preprocess(train_json, tokenizer)
 model = transformers.DistilBertForQuestionAnswering(configuration).cuda()
 optimizer = torch.optim.SGD(model.parameters(), learning_rate)
 
@@ -37,7 +36,8 @@ for epoch in range(epochs):
         loss.backward()
         optimizer.step()
         
-        print("Batch", i, "loss is", loss.item())
+        if i % 100 == 0:
+            print("Batch", i, "loss is", loss.item())
 
 torch.save(model, "model.pth")
 torch.save(model.state_dict(), "model_weights.pth")
