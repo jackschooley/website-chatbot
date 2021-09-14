@@ -19,6 +19,7 @@ class BatchIterator:
         self.context_starts = None
         self.start_positions = None
         self.end_positions = None
+        self.impossibles = None
         
     def _pad(self, input_ids, attention_mask):
         length, width = input_ids.size()
@@ -36,6 +37,7 @@ class BatchIterator:
         shuffled_contexts = []
         shuffled_starts = []
         shuffled_ends = []
+        shuffled_impossis = []
         
         if self._random_seed is None:
             self._random_seed = 1
@@ -49,22 +51,25 @@ class BatchIterator:
             shuffled_contexts.append(self.context_starts[i].item())
             shuffled_starts.append(self.start_positions[i].item())
             shuffled_ends.append(self.end_positions[i].item())
+            shuffled_impossis.append(self.impossibles[i].item())
             
         self.input_ids = torch.cat(shuffled_ids)
         self.attention_mask = torch.cat(shuffled_mask)
         self.context_starts = torch.LongTensor(shuffled_contexts)
         self.start_positions = torch.LongTensor(shuffled_starts)
         self.end_positions = torch.LongTensor(shuffled_ends)
+        self.impossibles = torch.FloatTensor(shuffled_impossis)
         self._random_seed += 1
         
     def _truncate(self, input_ids, attention_mask, context_starts,
-                  start_positions, end_positions):
+                  start_positions, end_positions, impossibles):
         
         split_input_ids = list(input_ids.split(1))
         split_attention_mask = list(attention_mask.split(1))
         split_context_starts = list(context_starts.split(1))
         split_start_positions = list(start_positions.split(1))
         split_end_positions = list(end_positions.split(1))
+        split_impossibles = list(impossibles.split(1))
         
         #filter out all the examples where the answer is too long
         i = 0
@@ -79,6 +84,7 @@ class BatchIterator:
                 split_context_starts.pop(i)
                 split_start_positions.pop(i)
                 split_end_positions.pop(i)
+                split_impossibles.pop(i)
                 i -= 1
             i += 1
             
@@ -93,26 +99,29 @@ class BatchIterator:
         contexts = torch.cat(split_context_starts)
         starts = torch.cat(split_start_positions)
         ends = torch.cat(split_end_positions)
+        impossis = torch.cat(split_impossibles)
         
-        truncated_inputs = (ids, mask, contexts, starts, ends)
+        truncated_inputs = (ids, mask, contexts, starts, ends, impossis)
         return truncated_inputs
         
     def add_examples(self, input_ids, attention_mask, context_starts, 
-                     start_positions, end_positions):
+                     start_positions, end_positions, impossibles):
         
         contexts = torch.LongTensor(context_starts)
         starts = torch.LongTensor(start_positions)
         ends = torch.LongTensor(end_positions)
+        impossis = torch.FloatTensor(impossibles)
         
         sequence_length = input_ids.size(1)
         if sequence_length > self._max_length:
-            truncated_inputs = self._truncate(input_ids, attention_mask,
-                                              contexts, starts, ends)
+            truncated_inputs = self._truncate(input_ids, attention_mask, contexts, 
+                                              starts, ends, impossis)
             ids = truncated_inputs[0]
             mask = truncated_inputs[1]
             contexts = truncated_inputs[2]
             starts = truncated_inputs[3]
             ends = truncated_inputs[4]
+            impossis = truncated_inputs[5]
         elif sequence_length < self._max_length:
             ids, mask = self._pad(input_ids, attention_mask)
         else:
@@ -125,12 +134,14 @@ class BatchIterator:
             self.context_starts = torch.cat([self.context_starts, contexts])
             self.start_positions = torch.cat([self.start_positions, starts])
             self.end_positions = torch.cat([self.end_positions, ends])
+            self.impossibles = torch.cat([self.impossibles, impossis])
         else:
             self.input_ids = ids
             self.attention_mask = mask
             self.context_starts = contexts
             self.start_positions = starts
             self.end_positions = ends
+            self.impossibles = impossis
         
     def get_batches(self, batch_size, train = False):
         if train:
@@ -143,11 +154,13 @@ class BatchIterator:
             batch_mask = self.attention_mask[start:end, :]
             batch_starts = self.start_positions[start:end]
             batch_ends = self.end_positions[start:end]
+            batch_impossis = self.impossibles[start:end]
             
             if train:
-                yield (batch_ids, batch_mask, batch_starts, batch_ends)
+                yield (batch_ids, batch_mask, batch_starts, batch_ends, batch_impossis)
             else:
                 batch_contexts = self.context_starts[start:end]
-                yield (batch_ids, batch_mask, batch_contexts, batch_starts, batch_ends)
+                yield (batch_ids, batch_mask, batch_contexts, batch_starts, 
+                       batch_ends, batch_impossis)
                 
-            start += batch_size
+            start = end

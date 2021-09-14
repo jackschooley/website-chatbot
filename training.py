@@ -28,17 +28,17 @@ for epoch in range(epochs):
         attention_mask = batch[1].cuda()
         start_positions = batch[2].cuda()
         end_positions = batch[3].cuda()
+        impossibles = batch[4].cuda()
         
-        model_output = model(input_ids, attention_mask, start_positions = start_positions,
-                             end_positions = end_positions)
+        model_output = model(input_ids, attention_mask, start_positions,
+                             end_positions, impossibles)
         loss = model_output.loss
         
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         
-        if i % 100 == 0:
-            print("Batch", i, "loss is", loss.item())
+        print("Batch", i, "loss is", loss.item())
 
 torch.save(model, "model.pth")
 torch.save(model.state_dict(), "model_weights.pth")

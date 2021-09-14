@@ -52,7 +52,10 @@ model.eval()
 
 tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
 batch_iterator = preprocessing.preprocess(dev_json, tokenizer)
+sigmoid = torch.nn.Sigmoid()
+
 batch_size = 16
+delta = 0.5
 
 predicted_answers = []
 true_answers = []
@@ -62,21 +65,32 @@ for batch in batch_iterator.get_batches(batch_size):
     context_starts = batch[2]
     start_positions = batch[3]
     end_positions = batch[4]
+    impossibles = batch[5]
     
     with torch.no_grad():
         model_output = model(input_ids, attention_mask)
         
     start_logits = model_output.start_logits.cpu()
     end_logits = model_output.end_logits.cpu()
+    
+    bool_logits = model_output.bool_logits.cpu()
+    bool_probs = sigmoid(bool_logits)
+    
     start_tokens, end_tokens = decode_token_logits(start_logits, end_logits, context_starts)
     
     for i in range(input_ids.size(0)):
-        predicted_answer = get_answer(input_ids[i, :], tokenizer, start_tokens[i], 
-                                      end_tokens[i])
-        predicted_answers.append(predicted_answer)
+        if bool_logits[i] >= delta:
+            predicted_answer = get_answer(input_ids[i, :], tokenizer, start_tokens[i], 
+                                          end_tokens[i])
+            predicted_answers.append(predicted_answer)
+        else:
+            predicted_answers.append("")
         
-        true_answer = get_answer(input_ids[i, :], tokenizer, start_positions[i], 
-                                 end_positions[i])
-        true_answers.append(true_answer)
+        if impossibles[i] == 0:
+            true_answer = get_answer(input_ids[i, :], tokenizer, start_positions[i], 
+                                     end_positions[i])
+            true_answers.append(true_answer)
+        else:
+            true_answers.append("")
         
-print(exact_matches(predicted_answers, true_answers))
+print("Exact matches:", exact_matches(predicted_answers, true_answers))
