@@ -2,6 +2,7 @@ import json
 import preprocessing
 import torch
 import transformers
+from model import MRCModel
 
 with open("data/train-v2.0.json") as file:
     train_json = json.load(file)
@@ -15,7 +16,7 @@ batch_size = 16
 epochs = 1
 
 batch_iterator = preprocessing.preprocess(train_json, tokenizer)
-model = transformers.DistilBertForQuestionAnswering(configuration).cuda()
+model = MRCModel(configuration).cuda()
 optimizer = torch.optim.SGD(model.parameters(), learning_rate)
 
 model.train()
