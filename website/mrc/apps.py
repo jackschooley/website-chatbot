@@ -1,5 +1,5 @@
 from django.apps import AppConfig
 
-class MrcConfig(AppConfig):
+class MRCConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'mrc'

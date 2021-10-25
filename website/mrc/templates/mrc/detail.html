@@ -4,9 +4,7 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <meta name="description" content="Jack Schooley's website where you can ask him questions about his background, 
-    interests, and how this site works.">
-    <link rel="stylesheet" type ="text/css" href="{% static 'mrc/homepage.css' %}">
+    <link rel="stylesheet" type ="text/css" href="{% static 'mrc/detail.css' %}">
     <title>Jack Schooley</title>
   </head>
 
@@ -24,7 +22,11 @@
     </nav>
 
     <main>
-      <p>What's up?</p>
+      <h2>Ask a question!</h2>
+      <form action="/response/" method="post">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" value="Submit">
     </main>
 
     <footer>
