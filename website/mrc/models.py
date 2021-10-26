@@ -6,7 +6,7 @@ from django.forms import ModelForm
 class MRCResults(models.Model):
     topic = models.CharField(max_length = 30)
     question_text = models.CharField("Question: ", max_length = 300)
-    date = models.DateTimeField("Date")
+    date_time = models.DateTimeField("Date and Time")
     answer_text = models.CharField(max_length = 512)
     
     def __str__(self):

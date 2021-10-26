@@ -79,7 +79,7 @@ for batch in batch_iterator.get_batches(batch_size):
     start_tokens, end_tokens = decode_token_logits(start_logits, end_logits, context_starts)
     
     for i in range(input_ids.size(0)):
-        if bool_logits[i] >= delta:
+        if bool_probs[i] >= delta:
             predicted_answer = get_answer(input_ids[i, :], tokenizer, start_tokens[i], 
                                           end_tokens[i])
             predicted_answers.append(predicted_answer)
