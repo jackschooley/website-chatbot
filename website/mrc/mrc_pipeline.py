@@ -3,17 +3,11 @@ import transformers
 from evaluation import decode_token_logits, get_answer
 from preprocessing import get_token_positions
 
-context = "Actually I'm not a reply guy."
+def mrc_pipeline(question, context, model, delta = 0.5):
+    tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
+    sigmoid = torch.nn.Sigmoid()
+    model.eval()
     
-model = torch.load("model.pth")
-model.load_state_dict(torch.load("model_weights.pth"))
-model.eval()
-
-tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
-sigmoid = torch.nn.Sigmoid()
-delta = 0.5
-
-def mrc_pipeline(question, context, tokenizer):
     output = tokenizer(question, context, padding = True, return_tensors = "pt",
                        return_attention_mask = True, return_offsets_mapping = True)
     input_ids = output["input_ids"]
@@ -28,11 +22,20 @@ def mrc_pipeline(question, context, tokenizer):
     bool_logits = model_output.bool_logits
     bool_probs = sigmoid(bool_logits)
     
-    context_start = get_token_positions(input_ids, offset_mapping)
-    start_token, end_token = decode_token_logits(start_logits, end_logits, context_start)
+    context_start = get_token_positions(input_ids[0], offset_mapping)
+    start_token, end_token = decode_token_logits(start_logits, end_logits, [context_start])
     
     if bool_probs.item() >= delta:
         answer = get_answer(input_ids, tokenizer, start_token, end_token)
     else:
         answer = "Don't know my guy."
     return answer
+
+if __name__ == "__main__":
+    question = "Are you a reply guy?"
+    context = "Actually I'm not a reply guy."
+        
+    model = torch.load("model.pth").cpu() #this should be fixed at some point
+    model.load_state_dict(torch.load("model_weights.pth"))
+    answer = mrc_pipeline(question, context, model)
+    print(answer)
