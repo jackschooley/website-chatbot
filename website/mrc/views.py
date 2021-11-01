@@ -28,3 +28,6 @@ def mrc_view(request):
     else:
         form = MRCResultsForm()
     return render(request, "mrc/detail.html", {"form": form})
+
+def submitted_view(request):
+    return render(request, "mrc/submitted.html")

@@ -39,8 +39,8 @@ def tokenize_contexts(df, tokenizer):
                        return_attention_mask = True, return_offsets_mapping = True)
     return output
 
-def get_token_positions(token_ids, offset_mapping, answer_text, answer_start):
-    answer_end = answer_start + len(answer_text)
+def get_token_positions(token_ids, offset_mapping, answer_text = None, 
+                        answer_start = None):
     
     #skip the question and get to the context
     sep_token_id = 102
@@ -48,6 +48,10 @@ def get_token_positions(token_ids, offset_mapping, answer_text, answer_start):
         if token_id.item() == sep_token_id:
             context_start = i + 1
             break
+    
+    if not answer_text:
+        return context_start
+    answer_end = answer_start + len(answer_text)
     
     #find the start token in the context
     for j in range(context_start, len(token_ids)):
@@ -95,7 +99,8 @@ def preprocess(json_file, tokenizer, max_examples = 10000, ignore_index = -999):
                 start_positions.append(token_positions[1])
                 end_positions.append(token_positions[2])
             else:
-                context_starts.append(ignore_index)
+                context_start = get_token_positions(token_ids, offset_mappings)
+                context_starts.append(context_start)
                 start_positions.append(ignore_index)
                 end_positions.append(ignore_index)
         

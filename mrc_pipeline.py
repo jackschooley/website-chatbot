@@ -3,9 +3,10 @@ import transformers
 from evaluation import decode_token_logits, get_answer
 from preprocessing import get_token_positions
 
+question = "Are you a reply guy?"
 context = "Actually I'm not a reply guy."
     
-model = torch.load("model.pth")
+model = torch.load("model.pth").cpu() #this should be fixed at some point
 model.load_state_dict(torch.load("model_weights.pth"))
 model.eval()
 
@@ -28,7 +29,7 @@ def mrc_pipeline(question, context, tokenizer):
     bool_logits = model_output.bool_logits
     bool_probs = sigmoid(bool_logits)
     
-    context_start = get_token_positions(input_ids, offset_mapping)
+    context_start = list(get_token_positions(input_ids[0], offset_mapping))
     start_token, end_token = decode_token_logits(start_logits, end_logits, context_start)
     
     if bool_probs.item() >= delta:
