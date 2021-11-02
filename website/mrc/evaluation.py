@@ -1,11 +1,8 @@
 import json
 import numpy as np
-import preprocessing
 import torch
 import transformers
-
-with open("data/dev-v2.0.json") as file:
-    dev_json = json.load(file)
+from . import preprocessing
     
 def decode_token_logits(start_logits, end_logits, context_starts):
     batch_size, sequence_length = start_logits.size()
@@ -90,6 +87,9 @@ def evaluate(model, tokenizer, batch_iterator, batch_size, delta):
         return accuracy
 
 if __name__ == "__main__":
+    with open("data/dev-v2.0.json") as file:
+        dev_json = json.load(file)
+    
     model = torch.load("model.pth").cuda()
     model.load_state_dict(torch.load("model_weights.pth"))
     model.eval()

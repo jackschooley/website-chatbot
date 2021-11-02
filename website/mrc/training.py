@@ -1,8 +1,8 @@
 import json
-import preprocessing
 import torch
 import transformers
-from model import MRCModel
+from .model import MRCModel
+from . import preprocessing
 
 with open("data/train-v2.0.json") as file:
     train_json = json.load(file)

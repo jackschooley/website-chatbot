@@ -1,10 +1,10 @@
 import torch
 import transformers
-from evaluation import decode_token_logits, get_answer
-from preprocessing import get_token_positions
+from .evaluation import decode_token_logits, get_answer
+from .preprocessing import get_token_positions
 
 def mrc_pipeline(question, context, model, delta = 0.5):
-    tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
+    tokenizer = transformers.DistilBertTokenizerFast("mrc/vocab.txt")
     sigmoid = torch.nn.Sigmoid()
     model.eval()
     
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     question = "Are you a reply guy?"
     context = "Actually I'm not a reply guy."
         
-    model = torch.load("model.pth").cpu() #this should be fixed at some point
-    model.load_state_dict(torch.load("model_weights.pth"))
+    model = torch.load("mrc/model.pth").cpu() #this should be fixed at some point
+    model.load_state_dict(torch.load("mrc/model_weights.pth"))
     answer = mrc_pipeline(question, context, model)
     print(answer)

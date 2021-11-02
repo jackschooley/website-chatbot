@@ -23,10 +23,11 @@
 
     <main>
       <h2>Ask a question!</h2>
-      <form action="/response/" method="post">
+      <form action="submitted" method="post">
         {% csrf_token %}
         {{ form }}
         <input type="submit" value="Submit">
+      </form>
     </main>
 
     <footer>

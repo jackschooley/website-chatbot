@@ -1,9 +1,10 @@
+import torch
+import transformers
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
 from django.views import generic
-import torch
-
+from .model import MRCModel
 from .models import MRCResultsForm
 from .mrc_pipeline import mrc_pipeline
 
@@ -16,22 +17,22 @@ class IndexView(generic.ListView):
 
 #this will be where the mrc model runs
 def mrc_view(request):
-    model = torch.load("model.pth")
-    model.load_state_dict(torch.load("model_weights.pth"))
-    model = model.cpu() #this should be fixed at some point, the weights are stored on gpu
+    distilbert_config = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
+                                                      dim = 384, hidden_dim = 1536)
+    model = MRCModel(distilbert_config)
+    model.load_state_dict(torch.load("mrc/model_weights.pth"))
     
     context = "Actually I'm not a reply guy."
     
     if request.method == "POST":
         form = MRCResultsForm(request.POST)
         if form.is_valid():
-            #process the form results
             question = form.save(commit = False)
-            question.topic = "all"
+            question.topic = "test"
             question.date_time = timezone.now()
             question.answer_text = mrc_pipeline(question.question_text, context, model)
             question.save()
-            return HttpResponseRedirect("/submitted/")
+            return HttpResponseRedirect("submitted")
     else:
         form = MRCResultsForm()
     return render(request, "mrc/detail.html", {"form": form})

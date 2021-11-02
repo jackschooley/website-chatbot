@@ -4,8 +4,8 @@ from django.forms import ModelForm
 # Create your models here.
 class MRCResults(models.Model):
     topic = models.CharField(max_length = 30)
-    question_text = models.CharField("Question: ", max_length = 300)
-    date_time = models.DateTimeField("Date and Time")
+    question_text = models.CharField("Question", max_length = 300)
+    date_time = models.DateTimeField()
     answer_text = models.CharField(max_length = 512)
     
     def __str__(self):
