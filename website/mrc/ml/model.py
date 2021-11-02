@@ -63,4 +63,5 @@ class MRCModel(nn.Module):
             
             total_loss = (start_loss + end_loss + possibility_loss) / 3
             
-        return ModelOutput(start_logits, end_logits, bool_logits, total_loss)
+        return ModelOutput(start_logits_squeezed, end_logits_squeezed, bool_logits, 
+                           total_loss)
