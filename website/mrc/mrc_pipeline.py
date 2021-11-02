@@ -1,7 +1,8 @@
 import torch
 import transformers
-from .evaluation import decode_token_logits, get_answer
-from .preprocessing import get_token_positions
+from ml.evaluation import decode_token_logits, get_answer
+from ml.model import MRCModel
+from ml.preprocessing import get_token_positions
 
 def mrc_pipeline(question, context, model, delta = 0.5):
     tokenizer = transformers.DistilBertTokenizerFast("mrc/vocab.txt")
@@ -34,8 +35,11 @@ def mrc_pipeline(question, context, model, delta = 0.5):
 if __name__ == "__main__":
     question = "Are you a reply guy?"
     context = "Actually I'm not a reply guy."
-        
-    model = torch.load("mrc/model.pth").cpu() #this should be fixed at some point
-    model.load_state_dict(torch.load("mrc/model_weights.pth"))
+    
+    distilbert_config = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
+                                                      dim = 384, hidden_dim = 1536)
+    model = MRCModel(distilbert_config)
+    model.load_state_dict(torch.load("mrc/ml/model_weights.pth"))
+    
     answer = mrc_pipeline(question, context, model)
     print(answer)

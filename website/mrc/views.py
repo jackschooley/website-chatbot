@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
 from django.views import generic
-from .model import MRCModel
+from ml.model import MRCModel
 from .models import MRCResultsForm
 from .mrc_pipeline import mrc_pipeline
 
@@ -20,7 +20,7 @@ def mrc_view(request):
     distilbert_config = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
                                                       dim = 384, hidden_dim = 1536)
     model = MRCModel(distilbert_config)
-    model.load_state_dict(torch.load("mrc/model_weights.pth"))
+    model.load_state_dict(torch.load("mrc/ml/model_weights.pth"))
     
     context = "Actually I'm not a reply guy."
     
