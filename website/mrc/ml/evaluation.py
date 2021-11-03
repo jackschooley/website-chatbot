@@ -39,7 +39,7 @@ def set_answerable_threshold(bool_probs, impossibles):
     best_accuracy = sum(impossibles).item() / n
     for question_set in question_sets_sorted:
         threshold = question_set[0].item()
-        decision = bool_probs >= threshold
+        decision = bool_probs >= threshold #decision = 1 is labeled impossible
         accuracy = sum(decision == impossibles).item() / n
         if accuracy > best_accuracy:
             best_threshold = threshold
@@ -59,14 +59,18 @@ def exact_matches(predicted_answers, true_answers):
     return correct
 
 def evaluate(model, tokenizer, batch_iterator, batch_size):
+    context_starts = batch_iterator.context_starts
+    start_positions = batch_iterator.start_positions
+    end_positions = batch_iterator.end_positions
+    impossibles = batch_iterator.impossibles
+    
     start_logits = None
     end_logits = None
     bool_logits = None
+    print("Starting batch evaluation")
     for batch in batch_iterator.get_batches(batch_size):
         input_ids = batch[0].cuda()
         attention_mask = batch[1].cuda()
-        start_positions = batch[2]
-        end_positions = batch[3]
         
         with torch.no_grad():
             model_output = model(input_ids, attention_mask)
@@ -87,17 +91,19 @@ def evaluate(model, tokenizer, batch_iterator, batch_size):
     sigmoid = torch.nn.Sigmoid()
     bool_probs = sigmoid(bool_logits)
     
-    context_starts = batch_iterator.context_starts
+    print("Getting start and end tokens")
     start_tokens, end_tokens = decode_token_logits(start_logits, end_logits, 
                                                    context_starts)
     
-    impossibles = batch_iterator.impossibles
+    print("Setting answerability threshold")
     delta = set_answerable_threshold(bool_probs, impossibles)
     
     predicted_answers = []
     true_answers = []
-    for i in range(input_ids.size(0)):
-        if bool_probs[i] >= delta:
+    input_ids = batch_iterator.input_ids
+    print("Getting answers")
+    for i in range(bool_probs.size(0)):
+        if bool_probs[i] < delta:
             predicted_answer = get_answer(input_ids[i, :], tokenizer, start_tokens[i], 
                                           end_tokens[i])
             predicted_answers.append(predicted_answer)
@@ -112,7 +118,7 @@ def evaluate(model, tokenizer, batch_iterator, batch_size):
             true_answers.append("")
     
     accuracy = exact_matches(predicted_answers, true_answers)
-    return accuracy, delta
+    return accuracy, delta, predicted_answers, true_answers
 
 if __name__ == "__main__":
     with open("data/dev-v2.0.json") as file:
@@ -128,6 +134,6 @@ if __name__ == "__main__":
     batch_iterator = preprocessing.preprocess(dev_json, tokenizer)
     batch_size = 16
     
-    accuracy, delta = evaluate(model, tokenizer, batch_iterator, batch_size)
+    accuracy, delta, preds, truth = evaluate(model, tokenizer, batch_iterator, batch_size)
     print("Exact matches:", accuracy)
     print("Answerability threshold used:", delta)
