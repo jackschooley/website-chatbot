@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.utils import timezone
 from django.views import generic
-from ml.model import MRCModel
+from .ml.model import MRCModel
 from .models import MRCResultsForm
 from .mrc_pipeline import mrc_pipeline
 

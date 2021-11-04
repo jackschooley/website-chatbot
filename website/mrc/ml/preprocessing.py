@@ -1,7 +1,7 @@
 import json
 import pandas as pd
 import transformers
-from batch import BatchIterator
+from .batch import BatchIterator
     
 def create_df(json_file):
     contexts = []

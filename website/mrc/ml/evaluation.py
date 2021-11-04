@@ -1,9 +1,9 @@
 import json
 import numpy as np
-import preprocessing
 import torch
 import transformers
-from model import MRCModel
+from . import preprocessing
+from .model import MRCModel
     
 def decode_token_logits(start_logits, end_logits, context_starts):
     batch_size, sequence_length = start_logits.size()

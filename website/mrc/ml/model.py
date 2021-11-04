@@ -18,11 +18,13 @@ class MRCModel(nn.Module):
         self.distilbert = transformers.DistilBertModel(distilbert_config)
         self.dropout = nn.Dropout(distilbert_config.qa_dropout)
         self.nonlinearity = nn.Tanh()
+        self.dim = distilbert_config.dim
+        self.sequence_length = distilbert_config.max_position_embeddings
         
-        self.start_linear = nn.Linear(distilbert_config.dim, 1)
-        self.end_linear = nn.Linear(distilbert_config.dim + 1, 1)
-        self.sketchy = nn.Linear(distilbert_config.dim, 1)
-        self.deep = nn.Linear(distilbert_config.max_position_embeddings * 2, 1)
+        self.start_linear = nn.Linear(self.dim, 1)
+        self.end_linear = nn.Linear(self.dim + 1, 1)
+        self.sketchy = nn.Linear(self.dim, 1)
+        self.deep = nn.Linear(self.sequence_length * 2, 1)
         self.answerable = nn.Linear(2, 1)
         
     def forward(self, input_ids, attention_mask, start_positions = None, 
@@ -45,7 +47,11 @@ class MRCModel(nn.Module):
         answer_logits = torch.cat([start_logits_squeezed, end_logits_squeezed], 1) #(bs, 2sl)
         answer = self.nonlinearity(answer_logits) #(bs, 2sl)
         
-        deep_logits = self.deep(answer) #(bs, 1)
+        #this is necessary during real-time evaluation only
+        padding_n = self.sequence_length * 2 - answer.size(1)
+        padded_answer = nn.functional.pad(answer, (0, padding_n))
+        
+        deep_logits = self.deep(padded_answer) #(bs, 1)
         deep = self.nonlinearity(deep_logits) #(bs, 1)
         
         answerable_logits = torch.cat([sketchy, deep], 1) #(bs, 2)

@@ -1,11 +1,11 @@
 import torch
 import transformers
-from ml.evaluation import decode_token_logits, get_answer
-from ml.model import MRCModel
-from ml.preprocessing import get_token_positions
+from .ml.evaluation import decode_token_logits, get_answer
+from .ml.model import MRCModel
+from .ml.preprocessing import get_token_positions
 
 def mrc_pipeline(question, context, model, delta = 0.5):
-    tokenizer = transformers.DistilBertTokenizerFast("mrc/vocab.txt")
+    tokenizer = transformers.DistilBertTokenizerFast("mrc/ml/vocab.txt")
     sigmoid = torch.nn.Sigmoid()
     model.eval()
     
@@ -23,11 +23,12 @@ def mrc_pipeline(question, context, model, delta = 0.5):
     bool_logits = model_output.bool_logits
     bool_probs = sigmoid(bool_logits)
     
-    context_start = get_token_positions(input_ids[0], offset_mapping)
+    ids = input_ids[0] #need to make this a one dimensional tensor
+    context_start = get_token_positions(ids, offset_mapping)
     start_token, end_token = decode_token_logits(start_logits, end_logits, [context_start])
     
-    if bool_probs.item() >= delta:
-        answer = get_answer(input_ids, tokenizer, start_token, end_token)
+    if bool_probs.item() < delta:
+        answer = get_answer(ids, tokenizer, start_token, end_token)
     else:
         answer = "Don't know my guy."
     return answer
@@ -39,7 +40,7 @@ if __name__ == "__main__":
     distilbert_config = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
                                                       dim = 384, hidden_dim = 1536)
     model = MRCModel(distilbert_config)
-    model.load_state_dict(torch.load("mrc/ml/model_weights.pth"))
+    model.load_state_dict(torch.load("ml/model_weights.pth"))
     
     answer = mrc_pipeline(question, context, model)
     print(answer)
