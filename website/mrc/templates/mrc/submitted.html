@@ -25,8 +25,8 @@
       <p>Your question: {{ question }}</p>
       <p>{{ answer }}</p>
       <p>
-        That was a pretty sick question honestly. <a href="{% url 'mrc:detail_page' topic %}">Ask another one</a> about this same topic 
-        or go back to the <a href="{% url 'mrc:questions_page' %}">list of topics</a> if you want.
+        That was a pretty sick question honestly. <a href="{% url 'mrc:detail_page' topic_instance.topic %}">Ask another one</a> about 
+        this same topic or go back to the <a href="{% url 'mrc:questions_page' %}">list of topics</a> if you want.
       </p>
     </main>
 
