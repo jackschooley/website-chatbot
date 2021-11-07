@@ -4,7 +4,7 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" type ="text/css" href="{% static 'mrc/detail.css' %}">
+    <link rel="stylesheet" type ="text/css" href="{% static 'mrc/questions.css' %}">
     <title>Jack Schooley</title>
   </head>
 
@@ -22,12 +22,11 @@
     </header>
 
     <main>
-      <h2>Ask a question!</h2>
-      <form method="post">
-        {% csrf_token %}
-        {{ form }}
-        <input type="submit" value="Submit">
-      </form>
+        <ul>
+            {% for topic in topics %}
+              <li><a href="{% url 'mrc:detail_page' topic %}">{{ topic }}</a></li>
+            {% endfor %}
+        </ul>
     </main>
 
     <footer>

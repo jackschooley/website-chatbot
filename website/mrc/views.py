@@ -1,24 +1,26 @@
 import torch
 import transformers
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views import generic
 from .ml.model import MRCModel
-from .models import MRCResultsForm
+from .models import MRCResultsForm, Topic
 from .mrc_pipeline import mrc_pipeline
 
-#this should eventually be the index for question topics
-class IndexView(generic.ListView):
-    template_name = "mrc/home.html"
-    
-    def get_queryset(self):
-        return None
+def homepage_view(request):
+    return render(request, "mrc/home.html")
 
-#this will be where the mrc model runs
-def mrc_view(request):
+def question_index_view(request):
+    topics = ["background", "stack"]
+    return render(request, "mrc/questions.html", {"topics": topics})
+
+def mrc_view(request, topic):
+    #check to see if it's a valid page based on topic
+    topic_instance = get_object_or_404(Topic, topic = topic)
+    
     #reset session variables
-    request.session["question"] = None
-    request.session["answer"] = None
+    if request.session.get("question"):
+        del request.session["question"]
+        del request.session["answer"]
     
     distilbert_config = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
                                                       dim = 384, hidden_dim = 1536)
@@ -41,22 +43,29 @@ def mrc_view(request):
             request.session["answer"] = answer
             
             #update model
-            qa.topic = "test"
+            qa.topic = topic_instance
             qa.date_time = timezone.now()
             qa.answer_text = answer
             qa.save()
             
-            return redirect("mrc:submitted_page")
+            return redirect("mrc:submitted_page", topic)
     else:
         form = MRCResultsForm()
     return render(request, "mrc/detail.html", {"form": form})
 
-def submitted_view(request):
-    #retrieve session variables from last view
-    #should build in a way that it can't be accessed if not coming from previous page
-    question = request.session["question"]
-    answer = request.session["answer"]
-    qa_context = {"question": question, "answer": answer}
+def submitted_view(request, topic):
+    #check to see if it's a valid page based on topic
+    get_object_or_404(Topic, topic = topic)
+    
+    try:
+        #retrieve session variables from last page
+        question = request.session["question"]
+        answer = request.session["answer"]
+    except KeyError:
+        #the user tried to break the site logic by going to this page without a question
+        question = "Can you (yes you, the person reading this) break this website?"
+        answer = "Clearly not. Nice try though."
+    qa_context = {"question": question, "answer": answer, "topic": topic}
     return render(request, "mrc/submitted.html", qa_context)
 
 def contact_view(request):
