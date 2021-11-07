@@ -1,7 +1,6 @@
 import torch
 import transformers
-from django.http import HttpResponseRedirect
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils import timezone
 from django.views import generic
 from .ml.model import MRCModel
@@ -17,6 +16,10 @@ class IndexView(generic.ListView):
 
 #this will be where the mrc model runs
 def mrc_view(request):
+    #reset session variables
+    request.session["question"] = None
+    request.session["answer"] = None
+    
     distilbert_config = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
                                                       dim = 384, hidden_dim = 1536)
     model = MRCModel(distilbert_config)
@@ -27,15 +30,34 @@ def mrc_view(request):
     if request.method == "POST":
         form = MRCResultsForm(request.POST)
         if form.is_valid():
-            question = form.save(commit = False)
-            question.topic = "test"
-            question.date_time = timezone.now()
-            question.answer_text = mrc_pipeline(question.question_text, context, model)
-            question.save()
-            return HttpResponseRedirect("submitted")
+            
+            #question answering
+            qa = form.save(commit = False)
+            question = qa.question_text
+            answer = mrc_pipeline(question, context, model)
+            
+            #update session variables for passing to next view
+            request.session["question"] = question
+            request.session["answer"] = answer
+            
+            #update model
+            qa.topic = "test"
+            qa.date_time = timezone.now()
+            qa.answer_text = answer
+            qa.save()
+            
+            return redirect("mrc:submitted_page")
     else:
         form = MRCResultsForm()
     return render(request, "mrc/detail.html", {"form": form})
 
 def submitted_view(request):
-    return render(request, "mrc/submitted.html")
+    #retrieve session variables from last view
+    #should build in a way that it can't be accessed if not coming from previous page
+    question = request.session["question"]
+    answer = request.session["answer"]
+    qa_context = {"question": question, "answer": answer}
+    return render(request, "mrc/submitted.html", qa_context)
+
+def contact_view(request):
+    return render(request, "mrc/contact.html")

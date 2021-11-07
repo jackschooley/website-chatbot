@@ -1,13 +1,33 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en-US">
   <head>
     <meta charset="utf-8">
-    <meta name="description" content="Jack Schooley's website where you can ask him questions about his background, 
-    interests, and how this site works.">
+    <link rel="stylesheet" type ="text/css" href="{% static 'mrc/submitted.css' %}">
     <title>Jack Schooley</title>
   </head>
 
   <body>
-  <p>Thanks m8!</p>
+    <header>
+      <h1>Jack Schooley's Website</h1>
+
+      <nav>
+        <ul>
+          <li><a href="{% url 'mrc:homepage' %}">Home</a></li>
+          <li><a href="{% url 'mrc:mrc_page' %}">Questions</a></li>
+          <li><a href="{% url 'mrc:contact_page' %}">Contact</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <p>Your question: {{ question }}</p>
+      <p>{{ answer }}</p>
+    </main>
+
+    <footer>
+      <p>I'll maybe put like my Github and LinkedIn, etc. here</p>
+    </footer>
   </body>
 </html>
