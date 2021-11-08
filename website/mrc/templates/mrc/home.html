@@ -5,7 +5,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="description" content="Jack Schooley's website where you can ask questions about his background, interests, and how this site works.">
+    {% block css %}
     <link rel="stylesheet" type ="text/css" href="{% static 'mrc/homepage.css' %}">
+    {% endblock %}
     <title>Jack Schooley</title>
   </head>
 
@@ -23,12 +25,14 @@
     </header>
 
     <main>
+      {% block main %}
       <p>
         What's up? I'm Jack. This main point of this website (for now) is to host a Machine Reading Comprehension project that I've 
         built from the ground up. You can head to the Questions section of the site to ask "me" questions about several topics 
         pertaining to my background, this project, and other things I'm interested in. You can also get my contact information in the
         Contact section.
       </p>
+      {% endblock %}
     </main>
 
     <footer>

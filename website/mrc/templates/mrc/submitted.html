@@ -1,37 +1,16 @@
+{% extends "mrc/home.html" %}
 {% load static %}
 
-<!DOCTYPE html>
-<html lang="en-US">
-  <head>
-    <meta charset="utf-8">
-    <link rel="stylesheet" type ="text/css" href="{% static 'mrc/submitted.css' %}">
-    <title>Jack Schooley</title>
-  </head>
+{% block css %}
+  {{ block.super }}
+  <link rel="stylesheet" type ="text/css" href="{% static 'mrc/submitted.css' %}">
+{% endblock %}
 
-  <body>
-    <header>
-      <h1>Jack Schooley's Website</h1>
-
-      <nav>
-        <ul>
-          <li><a href="{% url 'mrc:homepage' %}">Home</a></li>
-          <li><a href="{% url 'mrc:questions_page' %}">Questions</a></li>
-          <li><a href="{% url 'mrc:contact_page' %}">Contact</a></li>
-        </ul>
-      </nav>
-    </header>
-
-    <main>
-      <p>Your question: {{ question }}</p>
-      <p>{{ answer }}</p>
-      <p>
-        That was a pretty sick question honestly. <a href="{% url 'mrc:detail_page' topic_instance.topic %}">Ask another one</a> about 
-        this same topic or go back to the <a href="{% url 'mrc:questions_page' %}">list of topics</a> if you want.
-      </p>
-    </main>
-
-    <footer>
-      <p>I'll maybe put like my Github and LinkedIn, etc. here</p>
-    </footer>
-  </body>
-</html>
+{% block main %}
+  <p>Your question: {{ question }}</p>
+  <p>{{ answer }}</p>
+  <p>
+    That was a pretty sick question honestly. <a href="{% url 'mrc:detail_page' topic_instance.topic %}">Ask another one</a> about 
+    this same topic or go back to the <a href="{% url 'mrc:questions_page' %}">list of topics</a> if you want.
+  </p>
+{% endblock %}
