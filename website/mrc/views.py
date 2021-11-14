@@ -30,7 +30,7 @@ def mrc_view(request, topic):
     distilbert_config = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
                                                       dim = 384, hidden_dim = 1536)
     model = MRCModel(distilbert_config)
-    model.load_state_dict(torch.load("mrc/ml/model_weights.pth"))
+    model.load_state_dict(torch.load("mrc/ml/model_weights.pth", torch.device("cpu")))
     
     if request.method == "POST":
         form = MRCResultsForm(request.POST)
