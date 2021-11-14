@@ -7,9 +7,6 @@ from .ml.model import MRCModel
 from .models import MRCResultsForm, Topic
 from .mrc_pipeline import mrc_pipeline
 
-def homepage_view(request):
-    return render(request, "mrc/home.html")
-
 class TopicListView(generic.ListView):
     context_object_name = "topics"
     model = Topic
@@ -70,6 +67,3 @@ def submitted_view(request, topic):
         answer = "Clearly not. Nice try though."
     qa_context = {"question": question, "answer": answer, "topic_instance": topic_instance}
     return render(request, "mrc/submitted.html", qa_context)
-
-def contact_view(request):
-    return render(request, "mrc/contact.html")
