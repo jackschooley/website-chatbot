@@ -61,17 +61,22 @@ def create_df(json_file, ignore_index = -999):
 def tokenize_contexts(df, tokenizer, max_length):
     contexts = df["context"].tolist()
     questions = df["question"].tolist()
-    output = tokenizer(questions, contexts, padding = "max_length",
-                       truncation = "only_second", max_length = max_length,
-                       return_tensors = "pt", return_attention_mask = True, 
+    output = tokenizer(questions, contexts, 
+                       padding = "max_length",
+                       truncation = "only_second", 
+                       max_length = max_length,
+                       return_tensors = "pt", 
+                       return_attention_mask = True, 
                        return_offsets_mapping = True)
     return output
 
 def get_answer_positions(token_ids, offset_mapping, context_start, answer_text, 
                          answer_start, answer_end):
     
-    # find the start token in the context
     start_position = None
+    end_position = None
+    
+    # find the start token in the context
     for j in range(context_start, len(token_ids)):
         token_start, token_end = offset_mapping[j]
         if token_start >= answer_start:
@@ -82,7 +87,7 @@ def get_answer_positions(token_ids, offset_mapping, context_start, answer_text,
     
     # if the answer got truncated then the start position won't be found
     if not start_position:
-        return start_position, None
+        return start_position, end_position
         
     # find the end token in the context
     for k in range(start_position, len(token_ids)):
@@ -117,11 +122,11 @@ def get_token_positions(token_ids, offset_mapping, answer_text = None,
                                                             offset_mapping,
                                                             context_start,
                                                             text, start, end)
-        if start_position:
+        if end_position:
             starts_position.append(start_position)
             ends_position.append(end_position)
         else:
-            # the start position got truncated
+            # the start and/or end position got truncated
             return
         
     return context_start, starts_position, ends_position
@@ -172,7 +177,7 @@ def preprocess(tokenizer, train = True, max_examples = 10000, max_length = 512,
                     continue
                 
                 if train:
-                    # destroy the tuple and just take the only value
+                    # destroy the list and just take the only value
                     start_positions.append(starts_position[0])
                     end_positions.append(ends_position[0])
                 else:
