@@ -13,6 +13,20 @@
 3. Create Docker interface
 4. Buy VPS and point it to domain
 
+### Still To Do
+
+1. Finalize MRC model
+2. Write initialization for Django topics (topics, contexts)
+3. Write tests for ML development pipeline
+4. Finalize MRC real-time pipeline (with accounting for database field lengths, incorporating answerability thresholds, etc.)
+5. Optimize code structure
+6. Train model
+7. Make front-end look better
+8. Prepare for deployment (Daphne, secret keys, etc.)
+9. Run the site from my Ubuntu VM
+10. Set up CI/CD pipeline (not sure if this is done on VM or wait until VPS)
+11. Get the VPS and run it there
+
 ## References
 
 * SQuAD 2.0 - https://arxiv.org/pdf/1806.03822.pdf
