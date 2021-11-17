@@ -35,7 +35,10 @@ class Intensive(nn.Module):
         
         self.qa = nn.Linear(dim, 2)
         self.linear = nn.Linear(dim, 1)
+        
+        # initialize linear combination with equal weights
         self.alpha = nn.Linear(2, 1, False)
+        self.alpha.weight.data = torch.tensor([[0.5, 0.5]])
         
     def _get_score_diff(self, context_starts, start_logits, end_logits):
         score_has = torch.zeros_like(context_starts, dtype = torch.float)
@@ -74,13 +77,14 @@ class Intensive(nn.Module):
             qa_loss = (start_loss + end_loss) / 2
             
             intensive_loss_fct = nn.BCEWithLogitsLoss()
-            intensive_loss = intensive_loss_fct(intensive_logits, is_impossibles)
+            intensive_loss = intensive_loss_fct(intensive_logits.squeeze(1), 
+                                                is_impossibles.float())
             
             # weight loss appropriately
-            losses = [qa_loss.unsqueeze(1), intensive_loss.unsqueeze(1)]
-            loss_tensor = torch.cat(losses, 1)
+            losses = [qa_loss.unsqueeze(0), intensive_loss.unsqueeze(0)]
+            loss_tensor = torch.cat(losses, 0)
             total_loss = self.alpha(loss_tensor)
-        return start_logits, end_logits, score_diff, total_loss
+        return ModelOutput(score_diff, start_logits, end_logits, total_loss)
 
 class MRCModel(nn.Module):
     
@@ -93,7 +97,10 @@ class MRCModel(nn.Module):
         self.sketchy = Sketchy(self.dim)
         self.dropout = nn.Dropout(distilbert_config.qa_dropout)
         self.intensive = Intensive(self.dim, ignore_index)
+        
+        # initialize linear combination with equal weights
         self.beta = nn.Linear(2, 1, False)
+        self.beta.weight.data = torch.tensor([[0.5, 0.5]])
         
     def forward(self, input_ids, attention_mask, context_starts,
                 start_positions = None, end_positions = None, 
@@ -119,8 +126,8 @@ class MRCModel(nn.Module):
         scores_tensor = torch.cat(outputs, 1)
         scores = self.beta(scores_tensor)
         
-        losses = [sketchy_output.loss.unsqueeze(1), intensive_output.loss.unsqueeze(1)]
-        loss_tensor = torch.cat(losses, 1)
+        losses = [sketchy_output.loss.unsqueeze(0), intensive_output.loss]
+        loss_tensor = torch.cat(losses, 0)
         loss = self.beta(loss_tensor)
         
-        return ModelOutput(scores, start_logits, end_logits, loss)
+        return ModelOutput(scores, start_logits, end_logits, loss.squeeze(0))

@@ -11,6 +11,27 @@ class TopicListView(generic.ListView):
     context_object_name = "topics"
     model = Topic
     template_name = "mrc/questions.html"
+    
+    def __init__(self):
+        super(TopicListView, self).__init__()
+        
+        # if the topics table is empty, fill it from text files
+        if not self.model.objects.all().exists():
+            topics_folder = "mrc/topics/"
+            
+            # this file has a list of the topics
+            with open(topics_folder + "topics.txt") as topic_file:
+                topics = topic_file.readlines()
+            
+            # use the topic name to point to the file with its context
+            for topic_unstripped in topics:
+                topic = topic_unstripped.strip()
+                filename = topics_folder + topic + ".txt"
+                context = ""
+                with open(filename) as context_file:
+                    for line in context_file:
+                        context += line.strip() + " "
+                self.model.objects.create(topic = topic, context = context)
 
 def mrc_view(request, topic):
     #check to see if it's a valid page based on topic
