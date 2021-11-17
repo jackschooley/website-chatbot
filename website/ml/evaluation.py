@@ -6,11 +6,11 @@ import transformers
 from model import MRCModel
     
 def decode_token_logits(start_logits, end_logits, context_starts):
-    batch_size, sequence_length = start_logits.size()
-    start_tokens = torch.zeros(batch_size, dtype = torch.long)
-    end_tokens = torch.zeros(batch_size, dtype = torch.long)
+    examples, sequence_length = start_logits.size()
+    start_tokens = torch.zeros(examples, dtype = torch.long)
+    end_tokens = torch.zeros(examples, dtype = torch.long)
     
-    for i in range(batch_size):
+    for i in range(examples):
         context_start = context_starts[i]
         adjusted_length = sequence_length - context_start
         matrix_dims = (adjusted_length, adjusted_length)
@@ -32,9 +32,9 @@ def decode_token_logits(start_logits, end_logits, context_starts):
         
     return start_tokens, end_tokens
 
-def set_answerable_threshold(bool_probs, is_impossibles, output_pickle = True):
+def set_answerable_threshold(scores, is_impossibles, output_pickle = True):
     n = len(is_impossibles)
-    question_sets = zip(bool_probs, is_impossibles)
+    question_sets = zip(scores, is_impossibles)
     question_sets_sorted = sorted(question_sets, key = lambda x: x[0])
     
     best_threshold = 0
@@ -43,11 +43,12 @@ def set_answerable_threshold(bool_probs, is_impossibles, output_pickle = True):
         threshold = question_set[0].item()
         
         # decision = 1 is labeled impossible
-        decision = bool_probs >= threshold
+        decision = scores >= threshold
         
         accuracy = sum(decision == is_impossibles).item() / n
         if accuracy > best_accuracy:
             best_threshold = threshold
+            best_accuracy = accuracy
     
     # serialize the threshold created
     if output_pickle:

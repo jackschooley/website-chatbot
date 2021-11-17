@@ -1,4 +1,6 @@
+import evaluation
 import preprocessing
+import torch
 import transformers
 import unittest
 
@@ -68,21 +70,30 @@ class TestPreprocessing(unittest.TestCase):
                                                             answer_start)
         
         self.assertEqual(token_positions, None)
-            
-class TestModel(unittest.TestCase):
     
-    def test_dimensions(self):
-        """This test goes through the model architecture and makes sure all
-        the tensor dimensions behave like they're supposed to"""
-        pass
-            
 class TestEvaluation(unittest.TestCase):
     
     def test_decode_token_logits(self):
-        pass
+        start_logits = torch.tensor([[0.2, -0.8, 0.7, 0.6, 0.1, -0.224],
+                                     [0.9, 0.7, 0.53, -0.886, 0.4, 0.8]])
+        end_logits = torch.tensor([[0.875, 0.862, -0.1, -0.8, 0.6, 0.4],
+                                   [-0.852, 0.3, 0.12, 0.9, 0.6, -0.26]])
+        
+        context_starts = torch.tensor([2, 3])
+        start_positions = torch.tensor([2, 4])
+        end_positions = torch.tensor([4, 4])
+        start_tokens, end_tokens = evaluation.decode_token_logits(start_logits, 
+                                                                  end_logits, 
+                                                                  context_starts)
+        
+        self.assertTrue(torch.equal(start_tokens, start_positions))
+        self.assertTrue(torch.equal(end_tokens, end_positions))
     
-    def test_get_answerable_threshold(self):
-        pass
+    def test_set_answerable_threshold(self):
+        scores = torch.tensor([0.4, 0.8, 2.1, -0.551, -0.896, -0.7, 0.1038, 0.7])
+        is_impossibles = torch.tensor([1, 1, 0, 0, 1, 0, 0, 1])
+        best_threshold = evaluation.set_answerable_threshold(scores, is_impossibles, False)
+        self.assertAlmostEqual(best_threshold, 0.4)
 
 if __name__ == "__main__":
     unittest.main()
