@@ -22,12 +22,13 @@ for epoch in range(epochs):
     for i, batch in enumerate(batches):
         input_ids = batch[0].cuda()
         attention_mask = batch[1].cuda()
-        start_positions = batch[2].cuda()
-        end_positions = batch[3].cuda()
-        impossibles = batch[4].cuda()
+        context_starts = batch[2].cuda()
+        start_positions = batch[3].cuda()
+        end_positions = batch[4].cuda()
+        is_impossibles = batch[5].cuda()
         
-        model_output = model(input_ids, attention_mask, start_positions,
-                             end_positions, impossibles)
+        model_output = model(input_ids, attention_mask, context_starts,
+                             start_positions, end_positions, is_impossibles)
         loss = model_output.loss
         
         optimizer.zero_grad()

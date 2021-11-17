@@ -85,17 +85,19 @@ class BatchIterator:
             end = start + batch_size
             batch_ids = self.input_ids[start:end, :]
             batch_mask = self.attention_mask[start:end, :]
+            batch_contexts = self.context_starts[start:end]
             
             if self._train:
                 batch_starts = self.start_positions[start:end]
                 batch_ends = self.end_positions[start:end]
                 batch_impossibles = self.is_impossibles[start:end]
                 yield (batch_ids, 
-                       batch_mask, 
+                       batch_mask,
+                       batch_contexts,
                        batch_starts, 
                        batch_ends, 
                        batch_impossibles)
             else:
-                yield (batch_ids, batch_mask)
+                yield (batch_ids, batch_mask, batch_contexts)
                 
             start = end

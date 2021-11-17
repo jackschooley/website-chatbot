@@ -1,73 +1,126 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import transformers
 
 class ModelOutput:
     
-    def __init__(self, start_logits, end_logits, bool_logits, loss):
+    def __init__(self, scores, start_logits = None, end_logits = None, loss = None):
+        self.scores = scores
         self.start_logits = start_logits
         self.end_logits = end_logits
-        self.bool_logits = bool_logits
         self.loss = loss
-
-class MRCModel(nn.Module):
+        
+class Sketchy(nn.Module):
     
-    def __init__(self, distilbert_config):
+    def __init__(self, dim):
+        super(Sketchy, self).__init__()
+        self.linear = nn.Linear(dim, 2)
         
-        super(MRCModel, self).__init__()
-        self.distilbert = transformers.DistilBertModel(distilbert_config)
-        self.dropout = nn.Dropout(distilbert_config.qa_dropout)
-        self.nonlinearity = nn.Tanh()
-        self.dim = distilbert_config.dim
-        self.sequence_length = distilbert_config.max_position_embeddings
+    def forward(self, cls_hidden_state, is_impossibles = None):
+        sketchy_logits = self.linear(cls_hidden_state)
+        score_ext = sketchy_logits[:, 1] - sketchy_logits[:, 0]
         
-        self.start_linear = nn.Linear(self.dim, 1)
-        self.end_linear = nn.Linear(self.dim + 1, 1)
-        self.sketchy = nn.Linear(self.dim, 1)
-        self.deep = nn.Linear(self.sequence_length * 2, 1)
-        self.answerable = nn.Linear(2, 1)
+        sketchy_loss = None
+        if is_impossibles is not None:
+            sketchy_loss_fct = nn.CrossEntropyLoss()
+            sketchy_loss = sketchy_loss_fct(sketchy_logits, is_impossibles)
+        return ModelOutput(score_ext, loss = sketchy_loss)
+    
+class Intensive(nn.Module):
+    
+    def __init__(self, dim, ignore_index):
+        super(Intensive, self).__init__()
+        self.ignore_index = ignore_index
         
-    def forward(self, input_ids, attention_mask, start_positions = None, 
-                end_positions = None, impossibles = None):
+        self.qa = nn.Linear(dim, 2)
+        self.linear = nn.Linear(dim, 1)
+        self.alpha = nn.Linear(2, 1, False)
         
-        distilbert_output = self.distilbert(input_ids, attention_mask)
-        hidden_states = distilbert_output.last_hidden_state #(bs, sl, hs)
-        dropout_states = self.dropout(hidden_states) #(bs, sl, hs)
+    def _get_score_diff(self, context_starts, start_logits, end_logits):
+        score_has = torch.zeros_like(context_starts, dtype = torch.float)
+        for i in range(context_starts.size(0)):
+            context_start = context_starts[i]
+            
+            # create a matrix by broadcasting
+            start_logits_unsqueezed = start_logits[i, context_start:].unsqueeze(1)
+            end_logits_unsqueezed = end_logits[i, context_start:].unsqueeze(0)
+            matrix = start_logits_unsqueezed + end_logits_unsqueezed
+            
+            # create upper triangular matrix to ensure start <= end
+            triu_matrix = np.triu(matrix.cpu().detach().numpy())
+            triu_matrix[triu_matrix == 0] = np.NINF
+            score_has[i] = torch.tensor(np.amax(triu_matrix))
         
-        start_logits = self.start_linear(dropout_states) #(bs, sl, 1)
-        end_linear_inputs = torch.cat([dropout_states, start_logits], 2) #(bs, sl, hs + 1)
-        end_logits = self.end_linear(end_linear_inputs) #(bs, sl, 1)
+        score_null = start_logits[:, 0] + end_logits[:, 0]
+        score_diff = score_null - score_has
+        return score_diff
         
-        cls_hidden_state = hidden_states[:, 0, :] # (bs, 1, hs)
-        sketchy_logits = self.sketchy(cls_hidden_state) #(bs, 1)
-        sketchy = self.nonlinearity(sketchy_logits) #(bs, 1)
+    def forward(self, dropout_states, cls_hidden_state, context_starts, 
+                start_positions, end_positions, is_impossibles):
         
-        start_logits_squeezed = start_logits.squeeze(2) #(bs, sl)
-        end_logits_squeezed = end_logits.squeeze(2) #(bs, sl)
-        answer_logits = torch.cat([start_logits_squeezed, end_logits_squeezed], 1) #(bs, 2sl)
-        answer = self.nonlinearity(answer_logits) #(bs, 2sl)
+        qa_logits = self.qa(dropout_states)
+        start_logits = qa_logits[:, :, 0]
+        end_logits = qa_logits[:, :, 1]
         
-        #this is necessary during real-time evaluation only
-        padding_n = self.sequence_length * 2 - answer.size(1)
-        padded_answer = nn.functional.pad(answer, (0, padding_n))
-        
-        deep_logits = self.deep(padded_answer) #(bs, 1)
-        deep = self.nonlinearity(deep_logits) #(bs, 1)
-        
-        answerable_logits = torch.cat([sketchy, deep], 1) #(bs, 2)
-        bool_logits = self.answerable(answerable_logits).squeeze(1) #(bs, )
+        intensive_logits = self.linear(cls_hidden_state)
+        score_diff = self._get_score_diff(context_starts, start_logits, end_logits)
         
         total_loss = None
         if start_positions is not None and end_positions is not None:
+            qa_loss_fct = nn.CrossEntropyLoss(ignore_index = self.ignore_index)
+            start_loss = qa_loss_fct(start_logits, start_positions)
+            end_loss = qa_loss_fct(end_logits, end_positions)
+            qa_loss = (start_loss + end_loss) / 2
             
-            qa_loss_function = nn.CrossEntropyLoss(ignore_index = -999)
-            start_loss = qa_loss_function(start_logits_squeezed, start_positions)
-            end_loss = qa_loss_function(end_logits_squeezed, end_positions)
+            intensive_loss_fct = nn.BCEWithLogitsLoss()
+            intensive_loss = intensive_loss_fct(intensive_logits, is_impossibles)
             
-            bool_loss_function = nn.BCEWithLogitsLoss()
-            possibility_loss = bool_loss_function(bool_logits, impossibles)
-            
-            total_loss = (start_loss + end_loss + possibility_loss) / 3
-            
-        return ModelOutput(start_logits_squeezed, end_logits_squeezed, bool_logits, 
-                           total_loss)
+            # weight loss appropriately
+            losses = [qa_loss.unsqueeze(1), intensive_loss.unsqueeze(1)]
+            loss_tensor = torch.cat(losses, 1)
+            total_loss = self.alpha(loss_tensor)
+        return start_logits, end_logits, score_diff, total_loss
+
+class MRCModel(nn.Module):
+    
+    def __init__(self, distilbert_config, ignore_index = -999):
+        
+        super(MRCModel, self).__init__()
+        self.distilbert = transformers.DistilBertModel(distilbert_config)
+        self.dim = distilbert_config.dim
+        
+        self.sketchy = Sketchy(self.dim)
+        self.dropout = nn.Dropout(distilbert_config.qa_dropout)
+        self.intensive = Intensive(self.dim, ignore_index)
+        self.beta = nn.Linear(2, 1, False)
+        
+    def forward(self, input_ids, attention_mask, context_starts,
+                start_positions = None, end_positions = None, 
+                is_impossibles = None):
+        
+        # run inputs through distilbert and run sketchy module
+        distilbert_output = self.distilbert(input_ids, attention_mask)
+        hidden_states = distilbert_output.last_hidden_state
+        cls_hidden_state = hidden_states[:, 0, :]
+        sketchy_output = self.sketchy(cls_hidden_state, is_impossibles)
+        
+        # run dropout layer for qa and run intensive module
+        dropout_states = self.dropout(hidden_states)
+        intensive_output = self.intensive(dropout_states, cls_hidden_state, 
+                                          context_starts, start_positions, 
+                                          end_positions, is_impossibles)
+        
+        start_logits = intensive_output.start_logits
+        end_logits = intensive_output.end_logits
+        
+        # weight sketchy and intensive modules appropriately
+        outputs = [sketchy_output.scores.unsqueeze(1), intensive_output.scores.unsqueeze(1)]
+        scores_tensor = torch.cat(outputs, 1)
+        scores = self.beta(scores_tensor)
+        
+        losses = [sketchy_output.loss.unsqueeze(1), intensive_output.loss.unsqueeze(1)]
+        loss_tensor = torch.cat(losses, 1)
+        loss = self.beta(loss_tensor)
+        
+        return ModelOutput(scores, start_logits, end_logits, loss)
