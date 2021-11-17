@@ -4,6 +4,15 @@ from .models import MRCResults, Topic
 
 def create_topic(topic, context):
     return Topic.objects.create(topic = topic, context = context)
+
+class TopicListViewTests(TestCase):
+    
+    def test_topic_initialization(self):
+        """This tests if the topics table is filled from the specified text files
+        if it happens to be empty"""
+        url = reverse("mrc:questions_page")
+        self.client.get(url)
+        self.assertTrue(Topic.objects.all().exists())
     
 class MRCViewTests(TestCase):
     

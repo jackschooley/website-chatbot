@@ -98,7 +98,7 @@ def get_answer_positions(token_ids, offset_mapping, context_start, answer_text,
     
     return start_position, end_position
 
-def get_token_positions(token_ids, offset_mapping, answer_text = None, 
+def get_token_positions(token_ids, offset_mapping = None, answer_text = None, 
                         answer_start = None, sep_token_id = 102):
     
     # skip the question and get to the context
@@ -186,7 +186,7 @@ def preprocess(tokenizer, train = True, max_examples = 10000, max_length = 512,
                     end_positions.append(tuple(ends_position))
             else:
                 observations_kept.append(i)
-                context_start = get_token_positions(token_ids, offsets_mapping)
+                context_start = get_token_positions(token_ids)
                 context_starts.append(context_start)
                 start_positions.append(ignore_index)
                 end_positions.append(ignore_index)
