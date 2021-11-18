@@ -1,46 +1,76 @@
+import numpy as np
+import random
 import torch
-import transformers
-from .ml.evaluation import decode_token_logits, get_answer
-from .ml.model import MRCModel
-from .ml.preprocessing import get_token_positions
 
-def mrc_pipeline(question, context, model, delta = 0.5):
-    tokenizer = transformers.DistilBertTokenizerFast("mrc/ml/vocab.txt")
-    sigmoid = torch.nn.Sigmoid()
-    model.eval()
+def get_context_start(token_ids, sep_token_id):
+    for i, token_id in enumerate(token_ids):
+        if token_id.item() == sep_token_id:
+            context_start = i + 1
+            break
+    return context_start
+
+def decode_token_logits(start_logits, end_logits, context_start):
+    sequence_length = start_logits.size(1)
+    adjusted_length = sequence_length - context_start
+    matrix_dims = (adjusted_length, adjusted_length)
     
-    output = tokenizer(question, context, padding = True, return_tensors = "pt",
-                       return_attention_mask = True, return_offsets_mapping = True)
+    # create a matrix to represent joint logits
+    starts = start_logits[:, context_start:].squeeze(0).unsqueeze(1)
+    ends = end_logits[:, context_start:]
+    matrix = starts + ends
+    
+    # create upper triangular matrix to ensure start <= end and take argmax
+    triu_matrix = np.triu(matrix.numpy())
+    triu_matrix[triu_matrix == 0] = np.NINF
+    flat_argmax = np.argmax(triu_matrix)
+    raw_start, raw_end = np.unravel_index(flat_argmax, matrix_dims)
+    
+    # correct for shifted index
+    start_token = raw_start + context_start
+    end_token = raw_end + context_start
+    
+    return start_token, end_token
+
+def get_answer(token_ids, tokenizer, start_token, end_token):
+    ids = token_ids[start_token:end_token + 1].tolist()
+    tokens = tokenizer.convert_ids_to_tokens(ids)
+    string = tokenizer.convert_tokens_to_string(tokens)
+    return string
+
+def generate_unanswerable_response():
+    possible_responses = [
+        "Good question.",
+        "No idea honestly.",
+        "Machines are too dumb to answer that question."
+    ]
+    response = random.choice(possible_responses)
+    return response
+
+def mrc_pipeline(question, context, tokenizer, model, delta):
+    output = tokenizer(question, context, 
+                       padding = "max_length", 
+                       max_length = model.max_positional_embeddings,
+                       return_tensors = "pt",
+                       return_attention_mask = True)
+    
     input_ids = output["input_ids"]
     attention_mask = output["attention_mask"]
-    offset_mapping = output["offset_mapping"]
     
+    token_ids = input_ids.squeeze(1)
+    context_start = get_context_start(token_ids, tokenizer.sep_token_id)
+    context_starts = torch.tensor([context_start])
+    
+    model.eval()
     with torch.no_grad():
-        model_output = model(input_ids, attention_mask)
-        
+        model_output = model(input_ids, attention_mask, context_starts)
+    
+    scores = model_output.scores
     start_logits = model_output.start_logits
     end_logits = model_output.end_logits
-    bool_logits = model_output.bool_logits
-    bool_probs = sigmoid(bool_logits)
+    start_token, end_token = decode_token_logits(start_logits, end_logits, context_start)
     
-    ids = input_ids[0] #need to make this a one dimensional tensor
-    context_start = get_token_positions(ids, offset_mapping)
-    start_token, end_token = decode_token_logits(start_logits, end_logits, [context_start])
-    
-    if bool_probs.item() < delta:
-        answer = get_answer(ids, tokenizer, start_token, end_token)
+    if scores.item() >= delta:
+        answer = get_answer(token_ids, tokenizer, start_token, end_token)
     else:
-        answer = "Don't know my guy."
+        answer = generate_unanswerable_response()
     return answer
-
-if __name__ == "__main__":
-    question = "Are you a reply guy?"
-    context = "Actually I'm not a reply guy."
-    
-    distilbert_config = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
-                                                      dim = 384, hidden_dim = 1536)
-    model = MRCModel(distilbert_config)
-    model.load_state_dict(torch.load("ml/model_weights.pth"))
-    
-    answer = mrc_pipeline(question, context, model)
-    print(answer)

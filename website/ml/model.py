@@ -111,6 +111,7 @@ class MRCModel(nn.Module):
         hidden_states = distilbert_output.last_hidden_state
         cls_hidden_state = hidden_states[:, 0, :]
         sketchy_output = self.sketchy(cls_hidden_state, is_impossibles)
+        sketchy_scores = sketchy_output.scores
         
         # run dropout layer for qa and run intensive module
         dropout_states = self.dropout(hidden_states)
@@ -118,16 +119,19 @@ class MRCModel(nn.Module):
                                           context_starts, start_positions, 
                                           end_positions, is_impossibles)
         
+        intensive_scores = intensive_output.scores
         start_logits = intensive_output.start_logits
         end_logits = intensive_output.end_logits
         
         # weight sketchy and intensive modules appropriately
-        outputs = [sketchy_output.scores.unsqueeze(1), intensive_output.scores.unsqueeze(1)]
+        outputs = [sketchy_scores.unsqueeze(1), intensive_scores.unsqueeze(1)]
         scores_tensor = torch.cat(outputs, 1)
         scores = self.beta(scores_tensor)
         
-        losses = [sketchy_output.loss.unsqueeze(0), intensive_output.loss]
-        loss_tensor = torch.cat(losses, 0)
-        loss = self.beta(loss_tensor)
-        
-        return ModelOutput(scores, start_logits, end_logits, loss.squeeze(0))
+        loss = None
+        if sketchy_output.loss is not None and intensive_output.loss is not None:
+            losses = [sketchy_output.loss.unsqueeze(0), intensive_output.loss]
+            loss_tensor = torch.cat(losses, 0)
+            weighted_loss = self.beta(loss_tensor)
+            loss = weighted_loss.squeeze(0)
+        return ModelOutput(scores, start_logits, end_logits, loss)

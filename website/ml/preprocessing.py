@@ -108,7 +108,8 @@ def get_token_positions(token_ids, offset_mapping = None, answer_text = None,
             break
     
     # if the question is impossible, only the context start is needed
-    if not answer_text:
+    # this is also where you stop in the real-time pipeline
+    if offset_mapping is None:
         return context_start
     
     # the answer text and start are given in tuples to account for multiples

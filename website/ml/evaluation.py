@@ -126,7 +126,7 @@ def evaluate(model, tokenizer, batch_iterator, batch_size):
     predicted_answers = []
     true_answers = []
     for i in range(scores.size(0)):
-        if scores[i] < delta:
+        if scores[i] >= delta:
             predicted_answer = get_answer(input_ids[i, :], 
                                           tokenizer, 
                                           start_tokens[i], 
