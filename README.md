@@ -15,10 +15,10 @@
 
 ### Still To Do
 
-* Finalize MRC real-time pipeline (with accounting for database field lengths, incorporating answerability thresholds, etc.)
-* Optimize code structure
 * Train model
 * Make front-end look better
+* Finalize website details (with accounting for database field lengths, add descriptions for each topic, etc.)
+* General code optimizations and organization
 * Prepare for deployment (Daphne, secret keys, etc.)
 * Run the site from my Ubuntu VM
 * Set up CI/CD pipeline (not sure if this is done on VM or wait until VPS)
