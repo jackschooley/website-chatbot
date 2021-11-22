@@ -67,12 +67,28 @@ class MRCViewTests(TestCase):
     def test_known_answer(self):
         """This will be the test to see if the MRC model can answer questions
         that it is supposed to know"""
-        pass
+        topic = create_topic("stack", "This site uses Django as a web framework.")
+        url = reverse("mrc:detail_page", args = (topic.topic, ))
+        question = "What web framework does this site use?"
+        self.client.post(url, {"question_text": question})
+        answer = self.client.session["answer"]
+        self.assertEqual(answer, "django")
     
     def test_unknown_answer(self):
         """This will be the test to see if the MRC model outputs a suitable
         response to questions that it is not supposed to know"""
-        pass
+        topic = create_topic("stack", "This site uses Django as a web framework.")
+        url = reverse("mrc:detail_page", args = (topic.topic, ))
+        question = "What deep learning library does this site use?"
+        self.client.post(url, {"question_text": question})
+        
+        answer = self.client.session["answer"]
+        possible_responses = [
+            "Good question.",
+            "No idea honestly.",
+            "Machines are too dumb to answer that question."
+        ]
+        self.assertIn(answer, possible_responses)
         
 class SubmittedViewTests(TestCase):
     

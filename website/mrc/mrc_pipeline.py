@@ -49,14 +49,14 @@ def generate_unanswerable_response():
 def mrc_pipeline(question, context, tokenizer, model, delta):
     output = tokenizer(question, context, 
                        padding = "max_length", 
-                       max_length = model.max_positional_embeddings,
+                       max_length = model.sequence_length,
                        return_tensors = "pt",
                        return_attention_mask = True)
     
     input_ids = output["input_ids"]
     attention_mask = output["attention_mask"]
     
-    token_ids = input_ids.squeeze(1)
+    token_ids = input_ids.squeeze(0)
     context_start = get_context_start(token_ids, tokenizer.sep_token_id)
     context_starts = torch.tensor([context_start])
     
@@ -69,7 +69,7 @@ def mrc_pipeline(question, context, tokenizer, model, delta):
     end_logits = model_output.end_logits
     start_token, end_token = decode_token_logits(start_logits, end_logits, context_start)
     
-    if scores.item() >= delta:
+    if scores.item() < delta:
         answer = get_answer(token_ids, tokenizer, start_token, end_token)
     else:
         answer = generate_unanswerable_response()

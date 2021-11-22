@@ -36,10 +36,6 @@ class Intensive(nn.Module):
         self.qa = nn.Linear(dim, 2)
         self.linear = nn.Linear(dim, 1)
         
-        # initialize linear combination with equal weights
-        self.alpha = nn.Linear(2, 1, False)
-        self.alpha.weight.data = torch.tensor([[0.5, 0.5]])
-        
     def _get_score_diff(self, context_starts, start_logits, end_logits):
         score_has = torch.zeros_like(context_starts, dtype = torch.float)
         for i in range(context_starts.size(0)):
@@ -81,26 +77,25 @@ class Intensive(nn.Module):
                                                 is_impossibles.float())
             
             # weight loss appropriately
-            losses = [qa_loss.unsqueeze(0), intensive_loss.unsqueeze(0)]
-            loss_tensor = torch.cat(losses, 0)
-            total_loss = self.alpha(loss_tensor)
+            total_loss = 0.5 * qa_loss + 0.5 * intensive_loss
         return ModelOutput(score_diff, start_logits, end_logits, total_loss)
 
 class MRCModel(nn.Module):
     
-    def __init__(self, distilbert_config, ignore_index = -999):
+    def __init__(self, distilbert_config, weights = None, ignore_index = -999):
         
         super(MRCModel, self).__init__()
         self.distilbert = transformers.DistilBertModel(distilbert_config)
         self.dim = distilbert_config.dim
+        self.sequence_length = distilbert_config.max_position_embeddings
+        
+        # load pretrained distilbert weights during training
+        if weights:
+            self.distilbert.load_state_dict(weights())
         
         self.sketchy = Sketchy(self.dim)
         self.dropout = nn.Dropout(distilbert_config.qa_dropout)
         self.intensive = Intensive(self.dim, ignore_index)
-        
-        # initialize linear combination with equal weights
-        self.beta = nn.Linear(2, 1, False)
-        self.beta.weight.data = torch.tensor([[0.5, 0.5]])
         
     def forward(self, input_ids, attention_mask, context_starts,
                 start_positions = None, end_positions = None, 
@@ -124,14 +119,9 @@ class MRCModel(nn.Module):
         end_logits = intensive_output.end_logits
         
         # weight sketchy and intensive modules appropriately
-        outputs = [sketchy_scores.unsqueeze(1), intensive_scores.unsqueeze(1)]
-        scores_tensor = torch.cat(outputs, 1)
-        scores = self.beta(scores_tensor)
+        scores = 0.5 * sketchy_scores + 0.5 * intensive_scores
         
         loss = None
         if sketchy_output.loss is not None and intensive_output.loss is not None:
-            losses = [sketchy_output.loss.unsqueeze(0), intensive_output.loss]
-            loss_tensor = torch.cat(losses, 0)
-            weighted_loss = self.beta(loss_tensor)
-            loss = weighted_loss.squeeze(0)
+            loss = 0.5 * sketchy_output.loss + 0.5 * intensive_output.loss
         return ModelOutput(scores, start_logits, end_logits, loss)

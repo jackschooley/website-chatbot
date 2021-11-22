@@ -44,12 +44,9 @@ def mrc_view(request, topic):
         del request.session["question"]
         del request.session["answer"]
     
-    # load model and parameters
+    # load tokenizer, model, and parameters
     tokenizer = transformers.DistilBertTokenizerFast("ml/vocab.txt")
-    distilbert_config = transformers.DistilBertConfig(n_layers = 3, 
-                                                      n_heads = 6,
-                                                      dim = 384, 
-                                                      hidden_dim = 1536)
+    distilbert_config = transformers.DistilBertConfig()
     model = MRCModel(distilbert_config)
     model.load_state_dict(torch.load("ml/model_weights.pth", torch.device("cpu")))
     

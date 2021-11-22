@@ -44,7 +44,6 @@ def set_answerable_threshold(scores, is_impossibles, output_pickle = True):
         
         # decision = 1 is labeled impossible
         decision = scores >= threshold
-        
         accuracy = sum(decision == is_impossibles).item() / n
         if accuracy > best_accuracy:
             best_threshold = threshold
@@ -52,7 +51,7 @@ def set_answerable_threshold(scores, is_impossibles, output_pickle = True):
     
     # serialize the threshold created
     if output_pickle:
-        with open("delta.pickle", "wb") as file:
+        with open("delta0.pickle", "wb") as file:
             pickle.dump(best_threshold, file, pickle.HIGHEST_PROTOCOL)
             
     return best_threshold
@@ -126,7 +125,7 @@ def evaluate(model, tokenizer, batch_iterator, batch_size):
     predicted_answers = []
     true_answers = []
     for i in range(scores.size(0)):
-        if scores[i] >= delta:
+        if scores[i] < delta:
             predicted_answer = get_answer(input_ids[i, :], 
                                           tokenizer, 
                                           start_tokens[i], 
@@ -148,17 +147,14 @@ def evaluate(model, tokenizer, batch_iterator, batch_size):
     return accuracy, delta, predicted_answers, true_answers
 
 if __name__ == "__main__":
-    distilbert_config = transformers.DistilBertConfig(n_layers = 3, 
-                                                      n_heads = 6, 
-                                                      dim = 384, 
-                                                      hidden_dim = 1536)
+    distilbert_config = transformers.DistilBertConfig()
     model = MRCModel(distilbert_config).cuda()
-    model.load_state_dict(torch.load("model_weights.pth"))
+    model.load_state_dict(torch.load("model_weights0.pth"))
     model.eval()
     
     tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
     batch_iterator = preprocessing.preprocess(tokenizer, False)
-    batch_size = 16
+    batch_size = 4
     
     output = evaluate(model, tokenizer, batch_iterator, batch_size)
     accuracy, delta, preds, truth = output

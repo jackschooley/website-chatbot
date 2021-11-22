@@ -4,15 +4,16 @@ import transformers
 from model import MRCModel
 
 tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
-configuration = transformers.DistilBertConfig(n_layers = 3, n_heads = 6,
-                                              dim = 384, hidden_dim = 1536)
+configuration = transformers.DistilBertConfig()
+weights = torch.load("distilbert_pretrained_weights.pth")
 
-learning_rate = 0.0001
-batch_size = 16
-epochs = 1
+# learning rate of 0.0005 is too low for SGD
+learning_rate = 0.0003
+batch_size = 4
+epochs = 2
 
 batch_iterator = preprocessing.preprocess(tokenizer)
-model = MRCModel(configuration).cuda()
+model = MRCModel(configuration, weights).cuda()
 optimizer = torch.optim.SGD(model.parameters(), learning_rate)
 
 model.train()
@@ -35,6 +36,9 @@ for epoch in range(epochs):
         loss.backward()
         optimizer.step()
         
-        print("Batch", i, "loss is", loss.item())
-
-torch.save(model.state_dict(), "model_weights.pth")
+        if i % 100 == 0:
+            print("Batch", i, "loss is", loss.item())
+        torch.cuda.empty_cache()
+    
+    # save weights after every epoch just to be safe
+    torch.save(model.state_dict(), "model_weights" + str(epoch) + ".pth")
