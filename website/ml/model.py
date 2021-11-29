@@ -90,7 +90,7 @@ class MRCModel(nn.Module):
         self.sequence_length = distilbert_config.max_position_embeddings
         
         # load pretrained distilbert weights during training
-        if weights:
+        if weights is not None:
             self.distilbert.load_state_dict(weights())
         
         self.sketchy = Sketchy(self.dim)

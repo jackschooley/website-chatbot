@@ -51,7 +51,7 @@ def set_answerable_threshold(scores, is_impossibles, output_pickle = True):
     
     # serialize the threshold created
     if output_pickle:
-        with open("delta0.pickle", "wb") as file:
+        with open("delta.pickle", "wb") as file:
             pickle.dump(best_threshold, file, pickle.HIGHEST_PROTOCOL)
             
     return best_threshold
@@ -69,12 +69,45 @@ def get_answers(input_ids, tokenizer, starts, ends):
         answers.append(answer)
     return answers
 
-def exact_matches(predicted_answers, true_answers):
+def compute_em(predicted_answers, true_answers):
+    n = len(predicted_answers)
     correct = 0
-    for i in range(len(predicted_answers)):
+    for i in range(n):
         if predicted_answers[i] in true_answers[i]:
             correct += 1
-    return correct
+    em = correct / n
+    return em
+
+def compute_max_f1(start_token, end_token, start_positions, end_positions):
+    max_f1 = 0
+    predicted_tokens = np.array([i for i in range(start_token, end_token + 1)])
+    
+    # iterate over all the potential correct answers
+    for start_position, end_position in zip(start_positions, end_positions):
+        tokens = np.array([i for i in range(start_position, end_position + 1)])
+        common = np.intersect1d(tokens, predicted_tokens, True)
+        correct = common.size
+        
+        # avoid dividing by 0
+        if correct:
+            precision = correct / predicted_tokens.size
+            recall = correct / tokens.size
+            f1 = 2 * precision * recall / (precision + recall)
+            max_f1 = max(f1, max_f1)
+    return max_f1
+
+def compute_f1(predicted_answers, start_tokens, end_tokens, start_positions, 
+               end_positions, is_impossibles):
+    f1 = 0
+    for i, predicted_answer in enumerate(predicted_answers):
+        if is_impossibles[i]:
+            if predicted_answer:
+                f1 += 1
+        else:
+            f1 += compute_max_f1(start_tokens[i], end_tokens[i], 
+                                 start_positions[i], end_positions[i])
+    f1 /= len(predicted_answers)
+    return f1
 
 def evaluation_loop(model, batch_iterator, batch_size):
     scores = None
@@ -143,20 +176,24 @@ def evaluate(model, tokenizer, batch_iterator, batch_size):
         else:
             true_answers.append([""])
     
-    accuracy = exact_matches(predicted_answers, true_answers)
-    return accuracy, delta, predicted_answers, true_answers
+    em = compute_em(predicted_answers, true_answers)
+    f1 = compute_f1(predicted_answers, start_tokens, end_tokens, 
+                    start_positions, end_positions, is_impossibles)
+    
+    return em, f1, delta, predicted_answers, true_answers
 
 if __name__ == "__main__":
     distilbert_config = transformers.DistilBertConfig()
     model = MRCModel(distilbert_config).cuda()
-    model.load_state_dict(torch.load("model_weights0.pth"))
+    model.load_state_dict(torch.load("model_weights.pth"))
     model.eval()
     
     tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
     batch_iterator = preprocessing.preprocess(tokenizer, False)
-    batch_size = 4
+    batch_size = 2
     
     output = evaluate(model, tokenizer, batch_iterator, batch_size)
-    accuracy, delta, preds, truth = output
-    print("Exact matches:", accuracy)
+    em, f1, delta, preds, truth = output
+    print("EM:", em)
+    print("F1:", f1)
     print("Answerability threshold used:", delta)

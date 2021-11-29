@@ -1,25 +1,35 @@
 import preprocessing
 import torch
+import torch.optim as optim
 import transformers
 from model import MRCModel
 
 tokenizer = transformers.DistilBertTokenizerFast("vocab.txt")
+batch_iterator = preprocessing.preprocess(tokenizer)
+
 configuration = transformers.DistilBertConfig()
 weights = torch.load("distilbert_pretrained_weights.pth")
-
-# learning rate of 0.0005 is too low for SGD
-learning_rate = 0.0003
-batch_size = 4
-epochs = 2
-
-batch_iterator = preprocessing.preprocess(tokenizer)
 model = MRCModel(configuration, weights).cuda()
-optimizer = torch.optim.SGD(model.parameters(), learning_rate)
+
+# warmup for first epoch with learning rate 1/10th the size of inital rate
+learning_rate = 0.00002
+optimizer = optim.AdamW(model.parameters(), learning_rate)
+lr_lambda = lambda epoch: 10 ** (epoch - 1)
+scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda)
+
+# gpu can only hold 2 examples at a time
+gpu_batch_size = 2
+batch_size = 32
+gpu_batch_cycles = int(batch_size / gpu_batch_size)
+epochs = 2
 
 model.train()
 for epoch in range(epochs):
     print("Epoch", epoch)
-    batches = batch_iterator.get_batches(batch_size)
+    batches = batch_iterator.get_batches(gpu_batch_size)
+    batch_cycle = 0
+    batch_loss = 0
+    
     for i, batch in enumerate(batches):
         input_ids = batch[0].cuda()
         attention_mask = batch[1].cuda()
@@ -32,13 +42,25 @@ for epoch in range(epochs):
                              start_positions, end_positions, is_impossibles)
         loss = model_output.loss
         
-        optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
+        batch_loss += loss.item()
         
-        if i % 100 == 0:
-            print("Batch", i, "loss is", loss.item())
-        torch.cuda.empty_cache()
+        #accumulate gradients until target batch size is reached
+        if (i + 1) % gpu_batch_cycles == 0:
+            optimizer.step()
+            optimizer.zero_grad(True)
+        
+            if batch_cycle % 50 == 0:
+                print("Batch", batch_cycle, "loss is", batch_loss / gpu_batch_cycles)
+            
+            batch_cycle += 1
+            batch_loss = 0
+    scheduler.step()
     
     # save weights after every epoch just to be safe
     torch.save(model.state_dict(), "model_weights" + str(epoch) + ".pth")
+    
+# SGD with learning rate of 0.0003 achieves 52.33% EM after 2 epochs
+# AdamW with learning rate of 0.00003 achieves 56.83% EM after 1 epoch
+# AdamW with learning rate of 0.00003 with warmup of 0.1 achieves 58.00% EM after 2 epochs
+# AdamW with learning rate of 0.00003 achieves 59.83% EM after 5 epochs
