@@ -15,7 +15,6 @@
 
 ### Still To Do
 
-* Train model
 * Make front-end look better
 * Finalize website details (with accounting for database field lengths, add descriptions for each topic, etc.)
 * General code optimizations and organization
