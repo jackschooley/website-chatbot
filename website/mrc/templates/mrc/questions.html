@@ -10,7 +10,10 @@
   <p>Welcome to the question answering module! Choose a topic to ask a question about.</p>
   <div class="list">
     {% for topic_instance in topics %}
-      <div><a href="{% url 'mrc:detail_page' topic_instance.topic %}">{{ topic_instance.topic }}</a></div>
+      <div>
+        <a href="{% url 'mrc:detail_page' topic_instance.topic %}">{{ topic_instance.topic|title }}</a>
+        <p>{{ topic_instance.description }}</p>
+      </div>
     {% endfor %}
   </div>
 {% endblock %}

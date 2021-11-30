@@ -1,2 +1,3 @@
-background
-stack
+background|Ask me about my education, experience, and skills
+interests|Ask me about my hobbies and other fun things I do
+stack|Ask me about this website: the machine learning model, web framework, and more

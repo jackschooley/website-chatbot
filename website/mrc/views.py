@@ -20,19 +20,23 @@ class TopicListView(generic.ListView):
         if not self.model.objects.all().exists():
             topics_folder = "mrc/topics/"
             
-            # this file has a list of the topics
-            with open(topics_folder + "topics.txt") as topic_file:
-                topics = topic_file.readlines()
+            # this file has a list of the topics and descriptions
+            with open(topics_folder + "topics.txt") as topics_file:
+                topics = topics_file.readlines()
             
             # use the topic name to point to the file with its context
-            for topic_unstripped in topics:
-                topic = topic_unstripped.strip()
-                filename = topics_folder + topic + ".txt"
+            for topic_data in topics:
+                topic, description_unstripped = topic_data.split("|")
+                description = description_unstripped.strip()
+                filename = topics_folder + topic.lower() + ".txt"
                 context = ""
                 with open(filename) as context_file:
                     for line in context_file:
                         context += line.strip() + " "
-                self.model.objects.create(topic = topic, context = context)
+                
+                self.model.objects.create(topic = topic, 
+                                          description = description,
+                                          context = context)
 
 def mrc_view(request, topic):
     # check to see if it's a valid page based on topic

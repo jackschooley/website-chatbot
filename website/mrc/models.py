@@ -3,6 +3,7 @@ from django.forms import ModelForm
 
 class Topic(models.Model):
     topic = models.CharField(max_length = 30, unique = True)
+    description = models.CharField(max_length = 256)
     context = models.CharField(max_length = 1024)
     
     def __str__(self):
@@ -10,7 +11,7 @@ class Topic(models.Model):
 
 class MRCResults(models.Model):
     topic = models.ForeignKey(Topic, to_field = "topic", on_delete = models.CASCADE)
-    question_text = models.CharField("Question", max_length = 300)
+    question_text = models.CharField(max_length = 300)
     date_time = models.DateTimeField()
     answer_text = models.CharField(max_length = 512)
     
@@ -21,3 +22,4 @@ class MRCResultsForm(ModelForm):
     class Meta:
         model = MRCResults
         fields = ["question_text"]
+        labels = {"question_text": ""}
