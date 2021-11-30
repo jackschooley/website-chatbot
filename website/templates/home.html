@@ -5,8 +5,11 @@
   <head>
     <meta charset="utf-8">
     <meta name="description" content="Jack Schooley's website where you can ask questions about his background, interests, and how this site works.">
+    <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'fontawesome/css/fontawesome.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'fontawesome/css/brands.css' %}">
     {% block css %}
-    <link rel="stylesheet" type ="text/css" href="{% static 'homepage.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'homepage.css' %}">
     {% endblock %}
     <title>Jack Schooley</title>
   </head>
@@ -32,11 +35,13 @@
         pertaining to my background, this project, and other things I'm interested in. You can also get my contact information in the
         Contact section.
       </p>
+      <p>The source code for this website is all available on my GitHub, which is linked below.</p>
       {% endblock %}
     </main>
 
     <footer>
-      <p>I'll maybe put like my Github and LinkedIn, etc. here</p>
+      <a href="https://github.com/jackschooley"><i class="fab fa-github"></i></a>
+      <a href="https://www.linkedin.com/in/jackschooley/"><i class="fab fa-linkedin"></i></a>
     </footer>
   </body>
 </html>
