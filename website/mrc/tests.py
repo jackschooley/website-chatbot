@@ -1,6 +1,6 @@
 from django.shortcuts import reverse
 from django.test import TestCase
-from .models import MRCResults, Topic
+from .models import MRCResult, Topic
 
 def create_topic(topic, context):
     return Topic.objects.create(topic = topic, context = context)
@@ -53,7 +53,7 @@ class MRCViewTests(TestCase):
         url = reverse("mrc:detail_page", args = (topic.topic, ))
         question = "What web framework does this site use?"
         self.client.post(url, {"question_text": question})
-        self.assertEqual(MRCResults.objects.count(), 1)
+        self.assertEqual(MRCResult.objects.count(), 1)
         
     def test_redirect(self):
         """This tests if the redirect works as it's supposed to"""

@@ -7,10 +7,11 @@
 {% endblock %}
 
 {% block main %}
-  <p>Your question: {{ question }}</p>
-  <p>{{ answer }}</p>
-  <p>
-    That was a pretty sick question honestly. <a href="{% url 'mrc:detail_page' topic_instance.topic %}">Ask another one</a> about 
+  <p>Your question: <div class="question"> {{ question }}</div></p>
+  <p>Answer: <div class="answer"> {{ answer }}</div></p>
+  <br>
+  <p class="return">
+    That was a pretty sick question. <a href="{% url 'mrc:detail_page' topic_instance.topic %}">Ask another one</a> about 
     this same topic or go back to the <a href="{% url 'mrc:questions_page' %}">list of topics</a> if you want.
   </p>
 {% endblock %}

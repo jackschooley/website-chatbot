@@ -7,10 +7,19 @@
 {% endblock css %}
 
 {% block main %}
-  <h2>Ask a question!</h2>
+  <h2>{{ topic_instance.description }}</h2>
   <form method="post" autocomplete="off">
     {% csrf_token %}
     {{ form }}
     <input type="submit" value="Submit">
   </form>
+
+  <br>
+
+  <p>Here are some ideas for questions to ask:</p>
+  <ul>
+    {% for example in examples %}
+      <li>{{ example }}</li>
+    {% endfor %}
+  </ul>
 {% endblock %}

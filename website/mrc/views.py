@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views import generic
 from ml.model import MRCModel
-from .models import MRCResultsForm, Topic
+from .models import MRCResultForm, Topic
 from .mrc_pipeline import mrc_pipeline
 
 class TopicListView(generic.ListView):
@@ -28,7 +28,7 @@ class TopicListView(generic.ListView):
             for topic_data in topics:
                 topic, description_unstripped = topic_data.split("|")
                 description = description_unstripped.strip()
-                filename = topics_folder + topic.lower() + ".txt"
+                filename = topics_folder + "contexts/" + topic + ".txt"
                 context = ""
                 with open(filename) as context_file:
                     for line in context_file:
@@ -59,7 +59,7 @@ def mrc_view(request, topic):
         delta = pickle.load(file)
     
     if request.method == "POST":
-        form = MRCResultsForm(request.POST)
+        form = MRCResultForm(request.POST)
         if form.is_valid():
             
             # question answering
@@ -79,8 +79,16 @@ def mrc_view(request, topic):
             
             return redirect("mrc:submitted_page", topic)
     else:
-        form = MRCResultsForm()
-    return render(request, "mrc/detail.html", {"form": form})
+        form = MRCResultForm()
+        example_file = "mrc/topics/examples/{}.txt".format(topic_instance.topic)
+        with open(example_file) as file:
+            examples = [line.strip() for line in file]
+        context = {
+            "examples": examples, 
+            "form": form, 
+            "topic_instance": topic_instance
+        }
+    return render(request, "mrc/detail.html", context)
 
 def submitted_view(request, topic):
     # check to see if it's a valid page based on topic
@@ -95,5 +103,9 @@ def submitted_view(request, topic):
         question = "Can you (yes you, the person reading this) break this website?"
         answer = "Clearly not. Nice try though."
         
-    qa_context = {"question": question, "answer": answer, "topic_instance": topic_instance}
-    return render(request, "mrc/submitted.html", qa_context)
+    context = {
+        "question": question, 
+        "answer": answer,
+        "topic_instance": topic_instance
+    }
+    return render(request, "mrc/submitted.html", context)

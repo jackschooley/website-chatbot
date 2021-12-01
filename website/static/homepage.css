@@ -15,33 +15,8 @@ h1 {
     width: 100%;
 }
 
-ul {
-    background-color: rgb(140, 156, 228);
-    margin-top: 0;
-    padding-left: 0;
-    padding-top: 1%;
-    padding-bottom: 1%;
-    width: 100%;
-}
-
-nav li {
-    display: inline;
-    font-size: 1.2em;
-    list-style-type: none;
-    padding-left: 10%;
-}
-
-li:first-child {
-    padding-left: 0%;
-}
-
-li a {
-    color: white;
-    text-decoration: none;
-}
-
-li a:hover {
-    color: black;
+h2 {
+    font-size: 1.8em;
 }
 
 p {
@@ -64,4 +39,41 @@ i {
     margin-top: 2%;
     margin-bottom: 20px;
     width: 2.5%;
+}
+
+nav ul {
+    background-color: rgb(140, 156, 228);
+    margin-top: 0;
+    padding-left: 0;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    width: 100%;
+}
+
+nav li {
+    display: inline;
+    font-size: 1.2em;
+    list-style-type: none;
+    padding-left: 10%;
+}
+
+nav li:first-child {
+    padding-left: 1%;
+}
+
+li a {
+    color: white;
+    text-decoration: none;
+}
+
+li a:hover {
+    color: black;
+}
+
+h2 + p {
+    text-align: left;
+}
+
+h2 + p + p {
+    text-align: left;
 }

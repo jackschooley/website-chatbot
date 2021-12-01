@@ -1,0 +1,6 @@
+When did you graduate from high school?
+Where did you go for undergrad?
+What program did you do at MIT?
+Where did you do your MIT capstone?
+What is your main programming language?
+What would your ideal role be?

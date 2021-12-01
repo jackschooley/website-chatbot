@@ -1,0 +1,14 @@
+I was born and raised in North Attleboro, Massachusetts, and I graduated from North Attleboro High School in 2016. I went to the
+University of Connecticut for my undergrad, where I was the first student to propose and graduate with the Data Science major. I
+had to design my own curriculum for the most part and I had to go through a bunch of obscure administrative processes to make it
+happen. After that, I attended the Master of Business Analytics (MBAn) program at MIT, where I developed a deep understanding of
+machine learning, optimization, natural language processing, and other useful analytics methods. I did my MIT capstone with Corvus
+Insurance, where I developed a method to extract structured data from PDF email attachments. In addition to my formal training,
+I've done a lot of independent study and projects to develop relevant skills. I've worked on a couple of sports betting projects to
+apply my machine learning skills to a difficult domain that I'm interested in. I did a project on predicting English Premier League
+soccer games for my honors thesis at UConn, and I've also done a project on predicting against the spread in college football. My 
+main programming language is Python, but I'm also proficient with R, Julia, SQL, and Java, amongst others. I'm very comfortable with 
+the standard Python data science stack (Pandas, NumPy, Scikit-learn, etc.), and I also have experience with NLP libraries like SpaCy 
+and Hugging Face Transformers. My deep learning framework of choice is PyTorch and my web framework of choice is Django. For data 
+visualization, I have experience with both Looker and Tableau. Lastly, I'm familiar with standard developer tools like Git, Linux,
+Docker, PostgreSQL, and the AWS ecosystem. My ideal role would be as a full-stack data scientist or machine learning engineer.

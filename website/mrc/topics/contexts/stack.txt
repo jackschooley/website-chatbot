@@ -1,0 +1,8 @@
+This website is almost entirely built with Python and its various libraries. The machine learning model is a deep neural network 
+built with PyTorch. I use the DistilBERT transformer from Hugging Face as my pretrained language model for transfer learning, and 
+then I reproduce the architecture from the Retrospective Reader paper as my decoder. I used the SQuAD 2.0 dataset to train my model, 
+where my model has approximately a 56% EM score and approximately a 57% F1 score on the development set. I used the AdamW optimizer
+with a learning rate of 2e-6 for the first epoch and 2e-5 for the second epoch. The model is trained for a total of 2 epochs. I use 
+Django as my web framework and backend, and that ties together all the HTML and CSS that I have written for each of the site's 
+pages. I use SQLite 3 as my database. The site is deployed as a Docker container. It runs Daphne on a Virtual Private Server 
+(VPS). I use Traefik for my reverse proxy.

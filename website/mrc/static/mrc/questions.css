@@ -3,7 +3,7 @@
 }
 
 .list div {
-    background-color: aqua;
+    background-color: rgb(34, 214, 214);
     flex: 1;
     font-size: 1.3em;
     margin: 10px;
@@ -11,7 +11,7 @@
 }
 
 .list a {
-    color: rgb(47, 160, 53);
+    color: rgb(138, 8, 99);
     text-decoration: none;
 }
 

@@ -1,0 +1,6 @@
+Which paper did you reproduce?
+What dataset did you use to train the model?
+What learning rate did you use for the first epoch?
+What web backend do you use?
+What is the site deployed as?
+Which reverse proxy do you use?
