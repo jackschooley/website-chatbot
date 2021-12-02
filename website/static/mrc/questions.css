@@ -1,0 +1,24 @@
+.list {
+    display: flex;
+}
+
+.list div {
+    background-color: rgb(34, 214, 214);
+    flex: 1;
+    font-size: 1.3em;
+    margin: 10px;
+    padding: 10px;
+}
+
+.list a {
+    color: rgb(138, 8, 99);
+    text-decoration: none;
+}
+
+.list a:hover {
+    color: black;
+}
+
+.list p {
+    font-size: 1em;
+}

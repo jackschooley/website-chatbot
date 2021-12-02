@@ -15,17 +15,16 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-z9e*7a_f9xn3s7&far6h9k+lc-ml+zt1#ao4^$j1t)etr+ru8v'
+#SECRET_KEY = 'django-insecure-z9e*7a_f9xn3s7&far6h9k+lc-ml+zt1#ao4^$j1t)etr+ru8v'
+
+with open("website/secret_key.txt") as file:
+    SECRET_KEY = file.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1", ".localhost", "jackschooley.co"]
 
 
 # Application definition
@@ -42,6 +41,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -118,6 +118,8 @@ USE_TZ = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
 
+STATIC_ROOT = BASE_DIR / "website/static"
+
 STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
@@ -128,3 +130,8 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+ADMINS = [("Jack", "jack@jackschooley.co")]

@@ -1,0 +1,13 @@
+.question {
+    color:rgb(175, 33, 33);
+    font-size: 2em;
+}
+
+.answer {
+    color: seagreen;
+    font-size: 2em;
+}
+
+.return {
+    text-align: left;
+}
