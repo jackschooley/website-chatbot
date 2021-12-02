@@ -52,7 +52,7 @@ class TestPreprocessing(unittest.TestCase):
         self.assertEqual(context_token, 12)
             
     def test_truncation(self):
-        """Test the get_answer_positions function when truncation is necessary"""
+        """Test the get_answer_positions function when truncation is needed"""
         df_subset = self.df.iloc[2877:2878].reset_index(drop = True)
         output = preprocessing.tokenize_contexts(df_subset, self.tokenizer, 
                                                  self.max_length)

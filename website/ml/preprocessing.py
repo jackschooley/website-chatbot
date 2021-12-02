@@ -108,7 +108,6 @@ def get_token_positions(token_ids, offset_mapping = None, answer_text = None,
             break
     
     # if the question is impossible, only the context start is needed
-    # this is also where you stop in the real-time pipeline
     if offset_mapping is None:
         return context_start
     

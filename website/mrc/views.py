@@ -52,7 +52,8 @@ def mrc_view(request, topic):
     tokenizer = transformers.DistilBertTokenizerFast("ml/vocab.txt")
     distilbert_config = transformers.DistilBertConfig()
     model = MRCModel(distilbert_config)
-    model.load_state_dict(torch.load("ml/model_weights.pth", torch.device("cpu")))
+    model.load_state_dict(torch.load("ml/model_weights.pth", 
+                                     torch.device("cpu")))
     
     # load threshold for evaluating answerability
     with open("ml/delta.pickle", "rb") as file:
@@ -80,8 +81,8 @@ def mrc_view(request, topic):
             return redirect("mrc:submitted_page", topic)
     else:
         form = MRCResultForm()
-        example_file = "mrc/topics/examples/{}.txt".format(topic_instance.topic)
-        with open(example_file) as file:
+        example = "mrc/topics/examples/{}.txt".format(topic_instance.topic)
+        with open(example) as file:
             examples = [line.strip() for line in file]
         context = {
             "examples": examples, 
@@ -99,8 +100,8 @@ def submitted_view(request, topic):
         question = request.session["question"]
         answer = request.session["answer"]
     except KeyError:
-        # the user tried to break the site logic by going to this page without a question
-        question = "Can you (yes you, the person reading this) break this website?"
+        # user broke the site logic by going to this page without a question
+        question = "Can you (the person reading this) break this website?"
         answer = "Clearly not. Nice try though."
         
     context = {

@@ -57,10 +57,5 @@ for epoch in range(epochs):
             batch_loss = 0
     scheduler.step()
     
-    # save weights after every epoch just to be safe
-    torch.save(model.state_dict(), "model_weights" + str(epoch) + ".pth")
-    
-# SGD with learning rate of 0.0003 achieves 52.33% EM after 2 epochs
-# AdamW with learning rate of 0.00003 achieves 56.83% EM after 1 epoch
-# AdamW with learning rate of 0.00003 with warmup of 0.1 achieves 58.00% EM after 2 epochs
-# AdamW with learning rate of 0.00003 achieves 59.83% EM after 5 epochs
+# save trained weights
+torch.save(model.state_dict(), "model_weights.pth")

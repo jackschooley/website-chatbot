@@ -67,7 +67,8 @@ def mrc_pipeline(question, context, tokenizer, model, delta):
     scores = model_output.scores
     start_logits = model_output.start_logits
     end_logits = model_output.end_logits
-    start_token, end_token = decode_token_logits(start_logits, end_logits, context_start)
+    tokens = decode_token_logits(start_logits, end_logits, context_start)
+    start_token, end_token = tokens
     
     if scores.item() < delta:
         answer = get_answer(token_ids, tokenizer, start_token, end_token)

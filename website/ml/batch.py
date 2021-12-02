@@ -3,8 +3,8 @@ import torch
 
 class BatchIterator:
     
-    def __init__(self, train, max_length = 512, sep_id = 102, 
-                 pad_id = 0, random_seed = None):
+    def __init__(self, train, max_length = 512, sep_id = 102, pad_id = 0, 
+                 random_seed = None):
         
         self._train = train
         self._max_length = max_length

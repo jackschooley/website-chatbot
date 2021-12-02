@@ -10,7 +10,9 @@ class Topic(models.Model):
         return self.topic
 
 class MRCResult(models.Model):
-    topic = models.ForeignKey(Topic, to_field = "topic", on_delete = models.CASCADE)
+    topic = models.ForeignKey(Topic, 
+                              to_field = "topic", 
+                              on_delete = models.CASCADE)
     question_text = models.CharField(max_length = 128)
     date_time = models.DateTimeField()
     answer_text = models.CharField(max_length = 1024)
