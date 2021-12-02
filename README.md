@@ -10,15 +10,8 @@ passage, but it also refrains from answering questions that it does not know the
 * Reproduced architecture from Retrospective Reader
 * Trained model with AdamW
 * Built site with Django to host model
-* Deployed with Docker
-
-## Roadmap
-
-* General code optimizations and organization
-* Prepare for deployment (Daphne, secret keys, etc.)
-* Run the site from my Ubuntu VM
-* Set up CI/CD pipeline (not sure if this is done on VM or wait until VPS)
-* Get the VPS and run it there
+* Deployed with Daphne as a Docker container
+* Self-hosted website on a VPS
 
 ## References
 
