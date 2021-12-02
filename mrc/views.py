@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.views import generic
 from ml.model import MRCModel
 from .models import MRCResultForm, Topic
-from .mrc_pipeline import mrc_pipeline
+from .pipeline import mrc_pipeline
 
 class TopicListView(generic.ListView):
     context_object_name = "topics"
