@@ -15,35 +15,37 @@
   </head>
 
   <body>
-    <header>
-      <h1>Jack Schooley's Website</h1>
+    <div class="wrapper">
+      <header>
+        <h1>Jack Schooley's Website</h1>
 
-      <nav>
-        <ul>
-          <li><a href="{% url 'homepage' %}">Home</a></li>
-          <li><a href="{% url 'mrc:questions_page' %}">Questions</a></li>
-          <li><a href="{% url 'contact_page' %}">Contact</a></li>
-        </ul>
-      </nav>
-    </header>
+        <nav>
+          <ul>
+            <li><a href="{% url 'homepage' %}">Home</a></li>
+            <li><a href="{% url 'mrc:questions_page' %}">Questions</a></li>
+            <li><a href="{% url 'contact_page' %}">Contact</a></li>
+          </ul>
+        </nav>
+      </header>
 
-    <main>
-      {% block main %}
-      <h2>What's up? I'm Jack.</h2>
-      <p>
-        This main point of this website (for now) is to host a Machine Reading Comprehension project that I've built from the ground 
-        up. You can head to the Questions section of the site to ask "me" questions about several topics pertaining to my background, 
-        this project, and other things I'm interested in. You can also get my contact information in the Contact section.
-      </p>
-      <p>
-        The source code for this website is all available on my GitHub, which is linked below. There you can find a bit more
-        documentation about everything that went into this project.
-      </p>
-      {% endblock %}
-    </main>
+      <main>
+        {% block main %}
+        <h2>What's up? I'm Jack.</h2>
+        <p>
+          This main point of this website (for now) is to host a Machine Reading Comprehension project that I've built from the ground 
+          up. You can head to the Questions section of the site to ask "me" questions about several topics pertaining to my background, 
+          this project, and other things I'm interested in. You can also get my contact information in the Contact section.
+        </p>
+        <p>
+          The source code for this website is all available on my GitHub, which is linked below. There you can find a bit more
+          documentation about everything that went into this project.
+        </p>
+        {% endblock %}
+      </main>
+    </div>
 
     <footer>
-      <a href="https://github.com/jackschooley"><i class="fab fa-github"></i></a>
+      <a href="https://github.com/jackschooley/website-chatbot"><i class="fab fa-github"></i></a>
       <a href="https://www.linkedin.com/in/jackschooley/"><i class="fab fa-linkedin"></i></a>
     </footer>
   </body>

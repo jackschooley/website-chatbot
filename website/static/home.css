@@ -28,17 +28,14 @@ p {
 
 footer {
     background-color: #49e470;
-    bottom: 0;
-    position: absolute;
+    height: 80px;
     width: 100%;
 }
 
 i {
     color: rgb(97, 97, 97);
     font-size: 2em;
-    margin-top: 2%;
-    margin-bottom: 20px;
-    width: 2.5%;
+    padding-top: 25px;
 }
 
 nav ul {
@@ -76,4 +73,8 @@ h2 + p {
 
 h2 + p + p {
     text-align: left;
+}
+
+.wrapper {
+    min-height: calc(100vh - 80px);
 }
