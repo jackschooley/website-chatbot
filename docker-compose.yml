@@ -3,7 +3,12 @@ version: "3.8"
 services:
   web:
     build: .
-    command: daphne -b 0.0.0.0 website.asgi:application
+    command:
+      - sh
+      - -c
+      - |
+        python manage.py migrate
+        daphne -b 0.0.0.0 website.asgi:application
     volumes:
       - .:/code
     ports:
