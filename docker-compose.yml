@@ -3,30 +3,30 @@ version: "3"
 services:
   web:
     build: .
-    container-name: daphne
+    container_name: daphne
     restart: unless-stopped
     command:
       - sh
       - -c
       - |
         python manage.py migrate
-        daphne -b 0.0.0.0 -p 80 website.asgi:application
+        daphne -b 0.0.0.0 website.asgi:application
     volumes:
       - .:/code
     ports:
-      - 80:80
+      - 8000:8000
     labels:
       - traefik.enable=true
       - traefik.http.routers.daphne.entrypoints=websecure
       - traefik.http.routers.daphne.rule=Host(`jackschooley.co`)
-      - traefik.http.services.daphne.loadbalancer.server.port=80
+      - traefik.http.services.daphne.loadbalancer.server.port=8000
 
   reverse-proxy:
     image: traefik:v2.5
-    container-name: traefik
+    container_name: traefik
     restart: unless-stopped
     environment:
-      - LINODE_TOKEN=[redacted]
+      - LINODE_TOKEN=
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
@@ -47,7 +47,7 @@ services:
       - "80:80/tcp"
       - "443:443/tcp"
     volumes:
-      - var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
       - certs:/letsencrypt
 
 volumes:
