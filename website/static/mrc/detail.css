@@ -3,7 +3,8 @@ input {
 }
 
 main ul {
-    padding-left: 40%;
+    margin: auto;
+    width: 350px;
 }
 
 main li {
