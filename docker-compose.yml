@@ -3,13 +3,52 @@ version: "3"
 services:
   web:
     build: .
+    container-name: daphne
+    restart: unless-stopped
     command:
       - sh
       - -c
       - |
         python manage.py migrate
-        daphne -b 0.0.0.0 website.asgi:application
+        daphne -b 0.0.0.0 -p 80 website.asgi:application
     volumes:
       - .:/code
     ports:
-      - 8000:8000
+      - 80:80
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.daphne.entrypoints=websecure
+      - traefik.http.routers.daphne.rule=Host(`jackschooley.co`)
+      - traefik.http.services.daphne.loadbalancer.server.port=80
+
+  reverse-proxy:
+    image: traefik:v2.5
+    container-name: traefik
+    restart: unless-stopped
+    environment:
+      - LINODE_TOKEN=[redacted]
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
+      - --certificatesresolvers.letsencrypt.acme.dnschallenge.provider=linode
+      - --certificatesresolvers.letsencrypt.acme.email=jack@jackschooley.co
+      - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.websecure.forwardedHeaders.insecure=true
+      - --entrypoints.websecure.http.tls=true
+      - --entrypoints.websecure.http.tls.certResolver=letsencrypt
+      - --entrypoints.websecure.http.tls.domains[0].main=jackschooley.co
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.jackschooley.co
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+    volumes:
+      - var/run/docker.sock:/var/run/docker.sock:ro
+      - certs:/letsencrypt
+
+volumes:
+  certs:

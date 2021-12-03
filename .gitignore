@@ -60,7 +60,6 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
-secret_key.txt
 
 # Flask stuff:
 instance/
@@ -128,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# secrets
+linode_token.txt
+secret_key.txt
